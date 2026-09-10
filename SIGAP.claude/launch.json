@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sigap-preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8642", "--directory", "C:\\Users\\USER\\AppData\\Local\\Temp\\claude\\E--Buka-Claude\\f8971955-35e5-4811-839b-f1edc8a3535e\\scratchpad"],
+      "port": 8642
+    }
+  ]
+}
