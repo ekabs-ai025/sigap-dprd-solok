@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIGAP DPRD Solok</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF6EC;
+    --surface:#FFFFFF;
+    --surface-alt:#F2E8D2;
+    --ink:#241712;
+    --ink-soft:#6B584A;
+    --ink-faint:#8C7A69;
+    --maroon:#7A1F2B;
+    --maroon-deep:#54141C;
+    --maroon-ink:#FBF6EC;
+    --gold:#A5761F;
+    --gold-bright:#C98F2A;
+    --line:#E4D5B4;
+    --focus:#A5761F;
+    --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210;
+      --surface:#251A15;
+      --surface-alt:#2E2018;
+      --ink:#F4EADA;
+      --ink-soft:#C7B29A;
+      --ink-faint:#9C876F;
+      --maroon:#C4404E;
+      --maroon-deep:#8E2732;
+      --maroon-ink:#1B1210;
+      --gold:#D9A64C;
+      --gold-bright:#ECC373;
+      --line:#43312A;
+      --focus:#D9A64C;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210;
+    --surface:#251A15;
+    --surface-alt:#2E2018;
+    --ink:#F4EADA;
+    --ink-soft:#C7B29A;
+    --ink-faint:#9C876F;
+    --maroon:#C4404E;
+    --maroon-deep:#8E2732;
+    --maroon-ink:#1B1210;
+    --gold:#D9A64C;
+    --gold-bright:#ECC373;
+    --line:#43312A;
+    --focus:#D9A64C;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;} }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces', Georgia, 'Times New Roman', serif;
+    font-weight:650;
+    color:var(--ink);
+    text-wrap:balance;
+    margin:0;
+  }
+  a{color:inherit;}
+  img{max-width:100%;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:3px;}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    font-size:0.72rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--maroon);
+    font-weight:500;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:18px; height:2px;
+    background:var(--gold);
+    display:inline-block;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:20;
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px;
+    max-width:1120px; margin:0 auto;
+    gap:16px;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-weight:650; font-size:1.05rem;}
+  .brand .mark{
+    width:34px; height:34px; border-radius:8px;
+    background:var(--maroon); color:var(--maroon-ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:0.85rem;
+    flex-shrink:0;
+  }
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.68rem; color:var(--ink-soft); letter-spacing:0.02em;}
+  .navlinks{display:flex; align-items:center; gap:28px; font-size:0.9rem; font-weight:500;}
+  .navlinks a{text-decoration:none; color:var(--ink-soft); transition:color .15s;}
+  .navlinks a:hover{color:var(--maroon);}
+  @media (max-width:760px){ .navlinks{display:none;} }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 22px;
+    border-radius:8px;
+    font-weight:600; font-size:0.92rem;
+    text-decoration:none;
+    border:1px solid transparent;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    white-space:nowrap;
+  }
+  .btn-primary{background:var(--maroon); color:var(--maroon-ink);}
+  .btn-primary:hover{background:var(--maroon-deep); transform:translateY(-1px);}
+  .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--maroon); color:var(--maroon);}
+
+  /* ---------- hero ---------- */
+  .hero{padding:64px 0 56px;}
+  .hero-grid{
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:56px; align-items:center;
+  }
+  @media (max-width:900px){ .hero-grid{grid-template-columns:1fr; gap:40px;} }
+
+  .hero-copy{animation:rise .6s ease both;}
+  @keyframes rise{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  .hero h1{
+    font-size:clamp(2.1rem, 4.4vw, 3.3rem);
+    line-height:1.08;
+    margin:16px 0 20px;
+  }
+  .hero h1 em{ color:var(--maroon); font-style:normal; }
+  .hero p.lead{
+    font-size:1.08rem; color:var(--ink-soft); max-width:52ch; margin:0 0 30px;
+  }
+  .hero-actions{display:flex; gap:14px; flex-wrap:wrap;}
+
+  /* QR mock card */
+  .card-qr{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:22px;
+    box-shadow: 0 20px 40px -24px rgba(36,23,18,0.35);
+    animation:rise .7s ease .1s both;
+    max-width:380px;
+    margin-left:auto;
+  }
+  .card-qr-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;}
+  .card-qr-head .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--gold-bright); background:color-mix(in srgb, var(--maroon) 12%, transparent);
+    padding:4px 9px; border-radius:5px; font-weight:600;
+  }
+  .card-qr-head h3{font-size:0.95rem; margin-top:8px;}
+  .qr-box{
+    width:118px; height:118px; border:1px solid var(--line); border-radius:10px;
+    padding:8px; flex-shrink:0; background:var(--surface);
+  }
+  .card-qr-body{display:flex; gap:18px; align-items:flex-start;}
+  .qr-fields{flex:1; display:flex; flex-direction:column; gap:9px;}
+  .qr-field dt{font-size:0.66rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+  .qr-field dd{margin:2px 0 0; font-size:0.86rem; font-weight:600; color:var(--ink);}
+  .qr-field{margin:0;}
+  .qr-code{
+    margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--ink-soft);
+  }
+  .qr-code b{color:var(--maroon); font-weight:600;}
+
+  /* divider wave */
+  .divider{display:block; width:100%; height:44px; color:var(--line);}
+
+  /* ---------- section shell ---------- */
+  section{padding:64px 0;}
+  .section-head{max-width:640px; margin-bottom:40px;}
+  .section-head h2{font-size:clamp(1.6rem,2.6vw,2.2rem); margin-top:14px;}
+  .section-head p{color:var(--ink-soft); margin-top:14px; font-size:1rem;}
+
+  .band{background:var(--surface-alt); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+
+  /* problem list */
+  .problem-layout{display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start;}
+  @media (max-width:820px){ .problem-layout{grid-template-columns:1fr;} }
+  .problem-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column;}
+  .problem-list li{
+    display:flex; gap:14px; padding:16px 0; border-bottom:1px solid var(--line);
+  }
+  .problem-list li:first-child{padding-top:0;}
+  .problem-list li:last-child{border-bottom:none;}
+  .problem-list .x{
+    flex-shrink:0; width:22px; height:22px; border-radius:50%;
+    background:color-mix(in srgb, var(--maroon) 14%, transparent);
+    color:var(--maroon); display:flex; align-items:center; justify-content:center;
+    font-size:0.7rem; font-weight:700; margin-top:2px;
+  }
+  .problem-list p{margin:0; color:var(--ink); font-size:0.96rem;}
+
+  .ledger{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:26px;
+    box-shadow:var(--shadow);
+  }
+  .ledger h3{font-size:1rem; margin-bottom:4px;}
+  .ledger .sub{color:var(--ink-faint); font-size:0.82rem; margin-bottom:18px; font-family:'IBM Plex Mono',monospace;}
+  .ledger table{width:100%; border-collapse:collapse; font-size:0.84rem;}
+  .ledger th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:0.68rem;
+    text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint);
+    padding-bottom:10px; border-bottom:1px solid var(--line);
+  }
+  .ledger td{padding:10px 0; border-bottom:1px solid var(--line); color:var(--ink-soft); vertical-align:top;}
+  .ledger tr:last-child td{border-bottom:none;}
+  .ledger .strike{text-decoration:line-through; color:var(--ink-faint);}
+  .ledger .status-late{color:var(--maroon); font-weight:600; font-size:0.78rem;}
+  .ledger .status-ok{color:var(--gold-bright); font-weight:600; font-size:0.78rem;}
+
+  /* features */
+  .feature-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:22px;}
+  @media (max-width:760px){ .feature-grid{grid-template-columns:1fr;} }
+  .feature-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:26px;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .feature-card:hover{transform:translateY(-3px); box-shadow:0 16px 30px -22px rgba(36,23,18,0.4);}
+  .feature-icon{
+    width:42px; height:42px; border-radius:10px; background:color-mix(in srgb, var(--maroon) 10%, transparent);
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px; color:var(--maroon);
+  }
+  .feature-card h3{font-size:1.08rem; margin-bottom:10px;}
+  .feature-card p{margin:0; color:var(--ink-soft); font-size:0.92rem;}
+
+  /* steps */
+  .steps{display:grid; grid-template-columns:repeat(5,1fr); gap:0; position:relative;}
+  @media (max-width:900px){ .steps{grid-template-columns:1fr; gap:26px;} }
+  .step{position:relative; padding:0 16px 0 0;}
+  .step:first-child{padding-left:0;}
+  .step-num{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.85rem;
+    width:32px; height:32px; border-radius:50%; border:1.5px solid var(--maroon);
+    color:var(--maroon); display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+    background:var(--surface);
+  }
+  .step-line{
+    position:absolute; top:16px; left:32px; right:-16px; height:1.5px; background:var(--line);
+  }
+  @media (max-width:900px){ .step-line{display:none;} }
+  .step h4{font-size:0.96rem; margin:0 0 8px; font-family:'Fraunces',serif; font-weight:650;}
+  .step p{margin:0; font-size:0.86rem; color:var(--ink-soft);}
+
+  /* audience tags */
+  .tag-grid{display:flex; flex-wrap:wrap; gap:14px;}
+  .tag-card{
+    flex:1 1 200px;
+    border:1px solid var(--line); border-radius:12px; padding:18px 18px;
+    background:var(--surface);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .tag-card .k{font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em;}
+  .tag-card .v{font-weight:600; font-size:0.94rem;}
+
+  /* cta */
+  .cta{
+    background:var(--maroon); color:var(--maroon-ink); border-radius:20px;
+    padding:48px 40px; display:grid; grid-template-columns:1.3fr auto; gap:32px; align-items:center;
+  }
+  @media (max-width:760px){ .cta{grid-template-columns:1fr; padding:36px 26px;} }
+  .cta h2{color:var(--maroon-ink); font-size:clamp(1.5rem,2.6vw,2rem);}
+  .cta p{color:color-mix(in srgb, var(--maroon-ink) 78%, transparent); margin-top:12px; max-width:46ch;}
+  .cta .btn-primary{background:var(--maroon-ink); color:var(--maroon);}
+  .cta .btn-primary:hover{background:color-mix(in srgb, var(--maroon-ink) 88%, var(--maroon));}
+  .cta-address{font-family:'IBM Plex Mono',monospace; font-size:0.82rem; line-height:1.7; color:color-mix(in srgb, var(--maroon-ink) 85%, transparent); white-space:nowrap;}
+  @media (max-width:760px){ .cta-address{white-space:normal;} }
+
+  footer{padding:32px 0 40px; border-top:1px solid var(--line);}
+  .foot-row{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:0.82rem; color:var(--ink-faint);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span class="mark">SG</span>
+      <div>
+        SIGAP
+        <small>Sekretariat DPRD Kabupaten Solok</small>
+      </div>
+    </div>
+    <nav class="navlinks">
+      <a href="#masalah">Masalah</a>
+      <a href="#solusi">Solusi</a>
+      <a href="#cara-kerja">Cara Kerja</a>
+      <a href="#tamu">Jenis Tamu</a>
+    </nav>
+    <a class="btn btn-primary" href="#kontak">Ajukan Penerapan</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Sistem Informasi Gerbang Antrian Pengunjung</span>
+        <h1>Setiap tamu datang,<br><em>kantor sudah siap</em> menyambut.</h1>
+        <p class="lead">SIGAP menggantikan buku tamu kertas di Sekretariat DPRD Kabupaten Solok dengan pra-registrasi daring, kode QR, dan notifikasi otomatis — supaya tidak ada lagi tamu yang datang tanpa diketahui, dan pejabat selalu siap sebelum tamu tiba di ruang tunggu.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#cara-kerja">Lihat Cara Kerja</a>
+          <a class="btn btn-ghost" href="#kontak">Ajukan Penerapan</a>
+        </div>
+      </div>
+
+      <div class="card-qr">
+        <div class="card-qr-head">
+          <div>
+            <span class="tag">Kartu Kunjungan Digital</span>
+            <h3>Contoh Pra-Registrasi</h3>
+          </div>
+        </div>
+        <div class="card-qr-body">
+          <svg class="qr-box" viewBox="0 0 118 118" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Contoh kode QR kunjungan">
+            <rect width="118" height="118" fill="none"/>
+            <g id="qr-noise"></g>
+            <g fill="currentColor" style="color:var(--ink)">
+              <rect x="6" y="6" width="26" height="26" fill="none" stroke="currentColor" stroke-width="4"/>
+              <rect x="14" y="14" width="10" height="10"/>
+              <rect x="86" y="6" width="26" height="26" fill="none" stroke="currentColor" stroke-width="4"/>
+              <rect x="94" y="14" width="10" height="10"/>
+              <rect x="6" y="86" width="26" height="26" fill="none" stroke="currentColor" stroke-width="4"/>
+              <rect x="14" y="94" width="10" height="10"/>
+            </g>
+          </svg>
+          <dl class="qr-fields">
+            <div class="qr-field"><dt>Nama Tamu</dt><dd>Ir. Yenni Marlina, M.T.</dd></div>
+            <div class="qr-field"><dt>Instansi Asal</dt><dd>Dinas PUPR Kab. Solok</dd></div>
+            <div class="qr-field"><dt>Keperluan</dt><dd>Audiensi Program Infrastruktur 2026</dd></div>
+            <div class="qr-field"><dt>Ditemui</dt><dd>Sekretaris DPRD</dd></div>
+          </dl>
+        </div>
+        <div class="qr-code">
+          <span>Kode <b>SGP-0913-047</b></span>
+          <span>13 Sep 2026 · 09.30</span>
+        </div>
+      </div>
+    </div>
+
+    <svg class="divider wrap" viewBox="0 0 1120 44" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,40 Q140,4 280,40 Q420,4 560,40 Q700,4 840,40 Q980,4 1120,40" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+  </section>
+
+  <section id="masalah" class="band">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Kondisi di Meja Depan Saat Ini</span>
+        <h2>Buku tamu manual tidak lagi cukup</h2>
+        <p>Setiap hari, Sekretariat menerima tamu kedinasan, kunjungan kerja, hingga audiensi masyarakat. Ketika semuanya bergantung pada buku tulis dan koordinasi lisan, celahnya terasa di banyak titik sekaligus.</p>
+      </div>
+
+      <div class="problem-layout">
+        <ul class="problem-list">
+          <li><span class="x">✕</span><p>Tamu kedinasan maupun kunjungan kerja datang tanpa pemberitahuan lebih dulu ke bagian protokol.</p></li>
+          <li><span class="x">✕</span><p>Petugas di pos keamanan tidak tahu siapa yang ditunggu, dari instansi mana, dan menuju unit yang mana.</p></li>
+          <li><span class="x">✕</span><p>Pejabat atau staf yang dituju baru mengetahui kedatangan tamu setelah tamu menunggu di ruang tunggu.</p></li>
+          <li><span class="x">✕</span><p>Rekap kunjungan bulanan harus disalin ulang dari buku tulis — rawan hilang dan sulit ditelusuri kembali.</p></li>
+          <li><span class="x">✕</span><p>Ruang rapat atau ruang tamu pimpinan sesekali terpakai untuk dua agenda sekaligus karena tak ada jadwal terpusat.</p></li>
+        </ul>
+
+        <div class="ledger">
+          <h3>Buku Tamu — Contoh Catatan Manual</h3>
+          <div class="sub">Senin, 08 September 2026</div>
+          <table>
+            <thead><tr><th>Jam</th><th>Tamu</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>08.40</td><td class="strike">tidak diisi</td><td class="status-late">tak tercatat</td></tr>
+              <tr><td>09.15</td><td>Rombongan OPD (5 org)</td><td class="status-late">menunggu 25 mnt</td></tr>
+              <tr><td>10.02</td><td class="strike">— coretan —</td><td class="status-late">nama tak terbaca</td></tr>
+              <tr><td>11.30</td><td>Wartawan (2 org)</td><td class="status-ok">dibantu langsung</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="solusi">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Solusi</span>
+        <h2>Empat pilar kesiapan SIGAP</h2>
+        <p>Dirancang mengikuti alur kunjungan yang sesungguhnya terjadi di Sekretariat — dari sebelum tamu berangkat, hingga kunjungan selesai dan tercatat.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" stroke="currentColor" stroke-width="1.6"/><rect x="12" y="2" width="6" height="6" stroke="currentColor" stroke-width="1.6"/><rect x="2" y="12" width="6" height="6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="13" width="3" height="3" fill="currentColor"/></svg>
+          </div>
+          <h3>Pra-Registrasi &amp; Kode QR</h3>
+          <p>Tamu mengisi maksud kunjungan, unit tujuan, dan jadwal secara daring sebelum datang. Sistem menerbitkan kode QR pribadi yang tinggal dipindai di pos keamanan.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c-3 0-5 2.2-5 5v3.5L3 14h14l-2-3.5V7c0-2.8-2-5-5-5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 16.5a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.6"/></svg>
+          </div>
+          <h3>Notifikasi Otomatis ke Pejabat</h3>
+          <p>Begitu tamu check-in, pejabat atau staf tujuan langsung menerima notifikasi berisi nama tamu, instansi asal, dan keperluan — cukup waktu untuk bersiap.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 3.5h9a1.5 1.5 0 0 1 1.5 1.5v11l-2-1.2-1.8 1.2-1.8-1.2-1.8 1.2-1.8-1.2L4 16V3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 7h6M7 10h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Buku Tamu Digital</h3>
+          <p>Setiap kunjungan tercatat otomatis, dapat dicari dan difilter per unit atau tanggal — tanpa menyalin ulang buku tulis untuk laporan bulanan.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="13.5" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 7.5h15M6 2v3M14 2v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="5.5" y="10" width="3" height="3" fill="currentColor"/></svg>
+          </div>
+          <h3>Jadwal &amp; Kapasitas Ruang</h3>
+          <p>Ruang rapat dan ruang tamu pimpinan dijadwalkan terpusat, sehingga tidak ada dua agenda kunjungan bentrok di ruang yang sama.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cara-kerja" class="band">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Alur Penggunaan</span>
+        <h2>Cara kerja SIGAP, dari daftar sampai tercatat</h2>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="step-line"></div><div class="step-num">1</div><h4>Pra-registrasi</h4><p>Tamu mengisi formulir kunjungan dari tautan resmi Sekretariat sebelum berangkat.</p></div>
+        <div class="step"><div class="step-line"></div><div class="step-num">2</div><h4>Terbit kode &amp; jadwal</h4><p>Sistem menerbitkan kode QR pribadi dan slot jadwal kunjungan secara otomatis.</p></div>
+        <div class="step"><div class="step-line"></div><div class="step-num">3</div><h4>Check-in di lobi</h4><p>Petugas keamanan memindai kode QR saat tamu tiba di pos depan.</p></div>
+        <div class="step"><div class="step-line"></div><div class="step-num">4</div><h4>Notifikasi terkirim</h4><p>Pejabat atau staf tujuan menerima notifikasi kedatangan secara otomatis.</p></div>
+        <div class="step"><div class="step-num">5</div><h4>Tercatat digital</h4><p>Data kunjungan tersimpan dalam buku tamu digital, siap direkap kapan saja.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tamu">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Cakupan Layanan</span>
+        <h2>Dirancang untuk ragam tamu Sekretariat Dewan</h2>
+        <p>Bukan hanya tamu kedinasan — SIGAP mengakomodasi seluruh jenis kunjungan yang biasa diterima Sekretariat DPRD.</p>
+      </div>
+      <div class="tag-grid">
+        <div class="tag-card"><span class="k">Kategori</span><span class="v">Tamu Kedinasan &amp; Kunjungan Kerja OPD</span></div>
+        <div class="tag-card"><span class="k">Kategori</span><span class="v">Audiensi Masyarakat &amp; Organisasi</span></div>
+        <div class="tag-card"><span class="k">Kategori</span><span class="v">Wartawan &amp; Media</span></div>
+        <div class="tag-card"><span class="k">Kategori</span><span class="v">Delegasi DPRD Daerah Lain</span></div>
+        <div class="tag-card"><span class="k">Kategori</span><span class="v">Tamu Pimpinan &amp; Anggota Dewan</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="kontak">
+    <div class="wrap">
+      <div class="cta">
+        <div>
+          <h2>Siap diterapkan di Sekretariat DPRD Kabupaten Solok</h2>
+          <p>Ajukan penerapan SIGAP melalui Bagian Umum dan Protokol untuk menjadwalkan demonstrasi dan penyesuaian dengan alur kerja Sekretariat.</p>
+          <div class="hero-actions" style="margin-top:22px;">
+            <a class="btn btn-primary" href="#">Ajukan ke Bagian Umum &amp; Protokol</a>
+          </div>
+        </div>
+        <div class="cta-address">
+          Sekretariat DPRD Kabupaten Solok<br>
+          Kompleks Perkantoran Bupati Arosuka<br>
+          Kabupaten Solok, Sumatera Barat
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>SIGAP — Sistem Informasi Gerbang Antrian Pengunjung</span>
+    <span>Sekretariat DPRD Kabupaten Solok · 2026</span>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var g = document.getElementById('qr-noise');
+    if(!g) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var cell = 118/13;
+    var seed = 7;
+    function rnd(){ seed = (seed*9301+49297) % 233280; return seed/233280; }
+    for(var r=0;r<13;r++){
+      for(var c=0;c<13;c++){
+        var inCorner = (r<4&&c<4)||(r<4&&c>8)||(r>8&&c<4);
+        if(inCorner) continue;
+        if(rnd() > 0.55){
+          var rect = document.createElementNS(ns,'rect');
+          rect.setAttribute('x', (c*cell).toFixed(2));
+          rect.setAttribute('y', (r*cell).toFixed(2));
+          rect.setAttribute('width', (cell*0.86).toFixed(2));
+          rect.setAttribute('height', (cell*0.86).toFixed(2));
+          rect.setAttribute('fill', 'var(--ink)');
+          rect.setAttribute('opacity', '0.85');
+          g.appendChild(rect);
+        }
+      }
+    }
+  })();
+</script>
+</body>
+</html>
