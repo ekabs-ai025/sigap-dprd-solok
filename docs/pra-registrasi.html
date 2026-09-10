@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pra-Registrasi SIGAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#FBF6EC;
+    --surface:#FFFFFF;
+    --surface-alt:#F2E8D2;
+    --ink:#241712;
+    --ink-soft:#6B584A;
+    --ink-faint:#8C7A69;
+    --maroon:#7A1F2B;
+    --maroon-deep:#54141C;
+    --maroon-ink:#FBF6EC;
+    --gold:#A5761F;
+    --gold-bright:#C98F2A;
+    --line:#E4D5B4;
+    --focus:#A5761F;
+    --danger:#B3261E;
+    --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+      --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+      --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+      --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+      --danger:#E5837C;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+    --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+    --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+    --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+    --danger:#E5837C;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces', Georgia, serif; font-weight:650; color:var(--ink); text-wrap:balance; margin:0;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;} }
+
+  .wrap{max-width:720px; margin:0 auto; padding:0 20px;}
+
+  header{border-bottom:1px solid var(--line); background:var(--bg);}
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:720px; margin:0 auto; gap:16px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
+  .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
+
+  main{padding:40px 0 64px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--maroon); font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  }
+  .eyebrow::before{content:""; width:16px; height:2px; background:var(--gold); display:inline-block;}
+  h1.page-title{font-size:clamp(1.7rem,4vw,2.2rem); line-height:1.15; margin-bottom:10px;}
+  .page-sub{color:var(--ink-soft); font-size:0.98rem; max-width:56ch; margin-bottom:32px;}
+
+  form{display:flex; flex-direction:column; gap:22px;}
+  fieldset{border:1px solid var(--line); border-radius:14px; padding:22px 22px 24px; background:var(--surface);}
+  legend{font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--gold); padding:0 8px; font-weight:600;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:560px){ .grid2{grid-template-columns:1fr;} }
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field.full{grid-column:1 / -1;}
+  label{font-size:0.84rem; font-weight:600; color:var(--ink);}
+  label .opt{font-weight:400; color:var(--ink-faint); font-size:0.78rem;}
+  input[type="text"], input[type="tel"], input[type="email"], input[type="date"], input[type="time"], input[type="number"], select, textarea{
+    font-family:'Public Sans',sans-serif; font-size:0.94rem; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:9px;
+    padding:11px 13px; width:100%;
+  }
+  textarea{resize:vertical; min-height:72px; font-family:inherit;}
+  input:focus, select:focus, textarea:focus{border-color:var(--gold);}
+  .err{font-size:0.78rem; color:var(--danger); min-height:1em; display:none;}
+  .field.invalid .err{display:block;}
+  .field.invalid input, .field.invalid select, .field.invalid textarea{border-color:var(--danger);}
+
+  .pendamping-row{display:flex; gap:10px; align-items:center;}
+  .pendamping-row input{flex:1;}
+  .pendamping-row .idx{
+    font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--ink-faint); width:18px; flex-shrink:0;
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 24px;
+    border-radius:9px; font-weight:600; font-size:0.95rem; border:1px solid transparent; cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .btn-primary{background:var(--maroon); color:var(--maroon-ink);}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--maroon); color:var(--maroon);}
+
+  .submit-row{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .form-status{font-size:0.86rem; color:var(--ink-soft);}
+  .form-status.error{color:var(--danger);}
+
+  .banner{
+    border:1px solid var(--line); background:var(--surface-alt); border-radius:12px; padding:14px 16px;
+    font-size:0.86rem; color:var(--ink-soft); margin-bottom:26px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .banner.hidden{display:none;}
+
+  .confirm{display:none; flex-direction:column; align-items:center; text-align:center; gap:4px;}
+  .confirm.active{display:flex;}
+  main.confirm-mode form, main.confirm-mode .page-header{display:none;}
+  .confirm-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:32px;
+    box-shadow:var(--shadow); max-width:380px; width:100%;
+  }
+  .confirm-badge{
+    width:44px; height:44px; border-radius:50%; background:color-mix(in srgb, var(--gold) 18%, transparent);
+    color:var(--gold-bright); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;
+  }
+  .confirm-card h2{font-size:1.25rem; margin-bottom:6px;}
+  .confirm-card p.lead{color:var(--ink-soft); font-size:0.9rem; margin-bottom:22px;}
+  #qr-holder{display:flex; justify-content:center; margin-bottom:16px; padding:12px; background:#fff; border-radius:10px; border:1px solid var(--line); width:fit-content; margin-left:auto; margin-right:auto;}
+  .kode{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:1.15rem; color:var(--maroon);
+    letter-spacing:0.02em; margin-bottom:22px;
+  }
+  .summary{text-align:left; border-top:1px dashed var(--line); padding-top:16px; display:flex; flex-direction:column; gap:10px; margin-bottom:22px;}
+  .summary .row{display:flex; justify-content:space-between; gap:12px; font-size:0.86rem;}
+  .summary .row dt{color:var(--ink-faint); flex-shrink:0;}
+  .summary .row dd{margin:0; font-weight:600; text-align:right;}
+  .confirm-note{font-size:0.8rem; color:var(--ink-faint); margin-top:18px; max-width:340px;}
+
+  footer{padding:24px 0; border-top:1px solid var(--line); text-align:center;}
+  footer p{font-size:0.8rem; color:var(--ink-faint); margin:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span class="mark">SG</span>
+      <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
+    </div>
+    <a class="btn btn-ghost" href="index.html">Beranda SIGAP</a>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap">
+
+    <div class="page-header">
+      <span class="eyebrow">Pra-Registrasi Kunjungan</span>
+      <h1 class="page-title">Daftarkan kunjungan Anda ke Sekretariat DPRD Kabupaten Solok</h1>
+      <p class="page-sub">Isi formulir ini sebelum berangkat. Setelah dikirim, Anda akan mendapatkan kode kunjungan berbentuk QR — tunjukkan kode tersebut kepada petugas keamanan saat tiba di lobi.</p>
+    </div>
+
+    <div class="banner" id="unavailable-banner" style="display:none;">
+      <span>⚠</span>
+      <span>Penyimpanan data pra-registrasi sedang tidak tersedia. Silakan coba lagi nanti, atau hubungi Bagian Umum &amp; Protokol Sekretariat.</span>
+    </div>
+
+    <form id="reg-form" novalidate>
+      <fieldset>
+        <legend>Data Tamu</legend>
+        <div class="grid2">
+          <div class="field full">
+            <label for="nama">Nama Lengkap <span class="opt">(wajib)</span></label>
+            <input type="text" id="nama" name="nama" required autocomplete="name">
+            <span class="err">Nama wajib diisi.</span>
+          </div>
+          <div class="field">
+            <label for="instansi">Instansi / Asal <span class="opt">(wajib)</span></label>
+            <input type="text" id="instansi" name="instansi" required placeholder="mis. Dinas PUPR Kab. Solok">
+            <span class="err">Instansi wajib diisi.</span>
+          </div>
+          <div class="field">
+            <label for="hp">No. HP / WhatsApp <span class="opt">(wajib)</span></label>
+            <input type="tel" id="hp" name="hp" required placeholder="08xxxxxxxxxx" pattern="[0-9+\-\s]{8,16}">
+            <span class="err">Masukkan nomor HP yang valid (8–16 digit).</span>
+          </div>
+          <div class="field">
+            <label for="email">Email <span class="opt">(opsional)</span></label>
+            <input type="email" id="email" name="email" placeholder="nama@instansi.go.id">
+            <span class="err">Format email tidak valid.</span>
+          </div>
+          <div class="field">
+            <label for="identitas">No. KTP / Identitas Resmi <span class="opt">(opsional)</span></label>
+            <input type="text" id="identitas" name="identitas" placeholder="untuk keperluan keamanan">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Detail Kunjungan</legend>
+        <div class="grid2">
+          <div class="field full">
+            <label for="keperluan">Keperluan Kunjungan <span class="opt">(wajib)</span></label>
+            <textarea id="keperluan" name="keperluan" required placeholder="mis. Audiensi program infrastruktur 2026"></textarea>
+            <span class="err">Keperluan kunjungan wajib diisi.</span>
+          </div>
+          <div class="field full">
+            <label for="ditemui">Pejabat / Unit yang Dituju <span class="opt">(wajib)</span></label>
+            <select id="ditemui" name="ditemui" required>
+              <option value="">— Pilih tujuan —</option>
+              <option>Ketua DPRD</option>
+              <option>Wakil Ketua DPRD</option>
+              <option>Sekretaris DPRD</option>
+              <option>Kabag Umum dan Protokol</option>
+              <option>Kabag Persidangan dan Perundang-undangan</option>
+              <option>Kabag Keuangan</option>
+              <option value="__lain">Lainnya (tulis manual)</option>
+            </select>
+            <span class="err">Pilih pejabat atau unit yang dituju.</span>
+          </div>
+          <div class="field full" id="ditemui-lain-wrap" style="display:none;">
+            <label for="ditemui-lain">Sebutkan tujuan</label>
+            <input type="text" id="ditemui-lain" name="ditemui-lain" placeholder="mis. Bagian Persidangan Komisi II">
+          </div>
+          <div class="field">
+            <label for="tanggal">Tanggal Kunjungan <span class="opt">(wajib)</span></label>
+            <input type="date" id="tanggal" name="tanggal" required>
+            <span class="err">Pilih tanggal kunjungan (tidak boleh tanggal yang sudah lewat).</span>
+          </div>
+          <div class="field">
+            <label for="jam">Jam Kunjungan <span class="opt">(wajib)</span></label>
+            <input type="time" id="jam" name="jam" required>
+            <span class="err">Pilih jam kunjungan.</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Rombongan</legend>
+        <div class="field" style="max-width:220px; margin-bottom:16px;">
+          <label for="jumlah">Jumlah Rombongan <span class="opt">(termasuk Anda)</span></label>
+          <input type="number" id="jumlah" name="jumlah" min="1" max="30" value="1">
+        </div>
+        <div id="pendamping-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </fieldset>
+
+      <div class="submit-row">
+        <button type="submit" class="btn btn-primary" id="submit-btn">Kirim Pra-Registrasi</button>
+        <span class="form-status" id="form-status"></span>
+      </div>
+    </form>
+
+  </div>
+
+  <div class="wrap confirm" id="confirm-view">
+    <div class="confirm-card">
+      <div class="confirm-badge">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l4.5 4.5L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h2>Pra-registrasi berhasil</h2>
+      <p class="lead">Simpan atau tangkap layar kode ini. Tunjukkan kepada petugas keamanan saat tiba.</p>
+      <div id="qr-holder"></div>
+      <div class="kode" id="kode-display"></div>
+      <dl class="summary" id="summary-list"></dl>
+      <button type="button" class="btn btn-ghost" id="reset-btn">Daftarkan Tamu Lain</button>
+    </div>
+    <p class="confirm-note">Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.</p>
+  </div>
+</main>
+
+<footer>
+  <p>SIGAP — Sistem Informasi Gerbang Antrian Pengunjung · Sekretariat DPRD Kabupaten Solok</p>
+</footer>
+
+<script>
+(function(){
+  var SUPABASE_URL = 'https://bekpxjxxpnseizmvysyo.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla3B4anh4cG5zZWl6bXZ5c3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMjgxNDUsImV4cCI6MjEwNDYwNDE0NX0.iiDyGIoOiUkKIyMz1lkZtOsPQSfMnFCUOnPnoTJgaIY';
+
+  var sb = null;
+  try{
+    if(window.supabase && window.supabase.createClient){
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  }catch(e){ sb = null; }
+
+  var form = document.getElementById('reg-form');
+  var jumlahInput = document.getElementById('jumlah');
+  var pendampingList = document.getElementById('pendamping-list');
+  var ditemuiSelect = document.getElementById('ditemui');
+  var ditemuiLainWrap = document.getElementById('ditemui-lain-wrap');
+  var ditemuiLainInput = document.getElementById('ditemui-lain');
+  var submitBtn = document.getElementById('submit-btn');
+  var statusEl = document.getElementById('form-status');
+  var unavailableBanner = document.getElementById('unavailable-banner');
+  var main = document.getElementById('main');
+  var confirmView = document.getElementById('confirm-view');
+
+  if(!sb){ unavailableBanner.style.display = 'flex'; }
+
+  var today = new Date();
+  var isoToday = today.toISOString().slice(0,10);
+  document.getElementById('tanggal').setAttribute('min', isoToday);
+
+  function renderPendamping(n){
+    var count = Math.max(0, (parseInt(n,10)||1) - 1);
+    var existing = Array.prototype.slice.call(pendampingList.querySelectorAll('input')).map(function(i){return i.value;});
+    pendampingList.innerHTML = '';
+    for(var i=0;i<count;i++){
+      var row = document.createElement('div');
+      row.className = 'pendamping-row';
+      var idx = document.createElement('span');
+      idx.className = 'idx';
+      idx.textContent = (i+2) + '.';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Nama pendamping ' + (i+1);
+      input.name = 'pendamping-' + i;
+      input.value = existing[i] || '';
+      row.appendChild(idx);
+      row.appendChild(input);
+      pendampingList.appendChild(row);
+    }
+  }
+  renderPendamping(1);
+  jumlahInput.addEventListener('input', function(){ renderPendamping(jumlahInput.value); });
+
+  ditemuiSelect.addEventListener('change', function(){
+    ditemuiLainWrap.style.display = ditemuiSelect.value === '__lain' ? 'block' : 'none';
+    ditemuiLainInput.required = ditemuiSelect.value === '__lain';
+  });
+
+  function setFieldError(field, msg){
+    var wrap = field.closest('.field');
+    if(!wrap) return;
+    wrap.classList.add('invalid');
+    var err = wrap.querySelector('.err');
+    if(err && msg) err.textContent = msg;
+  }
+  function clearFieldError(field){
+    var wrap = field.closest('.field');
+    if(wrap) wrap.classList.remove('invalid');
+  }
+
+  function validate(){
+    var ok = true;
+    var required = form.querySelectorAll('[required]');
+    required.forEach(function(f){
+      clearFieldError(f);
+      if(!f.value || !f.value.trim()){
+        setFieldError(f);
+        ok = false;
+      }
+    });
+    var hp = document.getElementById('hp');
+    if(hp.value && !/^[0-9+\-\s]{8,16}$/.test(hp.value)){
+      setFieldError(hp);
+      ok = false;
+    }
+    var email = document.getElementById('email');
+    if(email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)){
+      setFieldError(email);
+      ok = false;
+    }
+    var tanggal = document.getElementById('tanggal');
+    if(tanggal.value && tanggal.value < isoToday){
+      setFieldError(tanggal, 'Tanggal kunjungan tidak boleh sebelum hari ini.');
+      ok = false;
+    }
+    return ok;
+  }
+
+  function genKode(tanggalStr){
+    var d = tanggalStr ? tanggalStr.replace(/-/g,'') : isoToday.replace(/-/g,'');
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var rand = '';
+    for(var i=0;i<4;i++){ rand += chars[Math.floor(Math.random()*chars.length)]; }
+    return 'SGP-' + d + '-' + rand;
+  }
+
+  function fieldRow(label, value){
+    if(!value) return '';
+    return '<div class="row"><dt>' + label + '</dt><dd>' + value + '</dd></div>';
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validate()){
+      statusEl.textContent = 'Periksa kembali data yang ditandai.';
+      statusEl.classList.add('error');
+      return;
+    }
+    if(!sb){
+      statusEl.textContent = 'Penyimpanan tidak tersedia saat ini.';
+      statusEl.classList.add('error');
+      unavailableBanner.style.display = 'flex';
+      return;
+    }
+
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Mengirim...';
+    submitBtn.disabled = true;
+
+    var ditemuiVal = ditemuiSelect.value === '__lain' ? ditemuiLainInput.value.trim() : ditemuiSelect.value;
+    var pendampingNames = Array.prototype.slice.call(pendampingList.querySelectorAll('input'))
+      .map(function(i){return i.value.trim();})
+      .filter(Boolean);
+    var tanggalVal = document.getElementById('tanggal').value;
+    var jamVal = document.getElementById('jam').value;
+
+    var formData = {
+      nama: document.getElementById('nama').value.trim(),
+      instansi: document.getElementById('instansi').value.trim(),
+      hp: document.getElementById('hp').value.trim(),
+      email: document.getElementById('email').value.trim() || null,
+      identitas: document.getElementById('identitas').value.trim() || null,
+      keperluan: document.getElementById('keperluan').value.trim(),
+      ditemui: ditemuiVal,
+      tanggalKunjungan: tanggalVal,
+      jamKunjungan: jamVal,
+      jumlahRombongan: parseInt(jumlahInput.value,10) || 1,
+      pendamping: pendampingNames
+    };
+
+    function attemptSave(attemptsLeft){
+      var kode = genKode(tanggalVal);
+      sb.from('registrations').insert({
+        kode_kunjungan: kode,
+        nama: formData.nama,
+        instansi: formData.instansi,
+        hp: formData.hp,
+        email: formData.email,
+        identitas: formData.identitas,
+        keperluan: formData.keperluan,
+        ditemui: formData.ditemui,
+        tanggal_kunjungan: formData.tanggalKunjungan,
+        jam_kunjungan: formData.jamKunjungan,
+        jumlah_rombongan: formData.jumlahRombongan,
+        pendamping: formData.pendamping,
+        status: 'menunggu-checkin'
+      }).then(function(res){
+        if(res.error){
+          if(res.error.code === '23505' && attemptsLeft > 0){
+            attemptSave(attemptsLeft - 1);
+            return;
+          }
+          submitBtn.disabled = false;
+          statusEl.textContent = 'Gagal menyimpan data. Coba lagi.';
+          statusEl.classList.add('error');
+          return;
+        }
+        showConfirmation(kode, formData);
+      }).catch(function(){
+        submitBtn.disabled = false;
+        statusEl.textContent = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+        statusEl.classList.add('error');
+      });
+    }
+    attemptSave(3);
+  });
+
+  function showConfirmation(kode, data){
+    document.getElementById('kode-display').textContent = kode;
+    var summary = document.getElementById('summary-list');
+    summary.innerHTML =
+      fieldRow('Nama', data.nama) +
+      fieldRow('Instansi', data.instansi) +
+      fieldRow('Ditemui', data.ditemui) +
+      fieldRow('Jadwal', data.tanggalKunjungan + ' · ' + data.jamKunjungan) +
+      fieldRow('Rombongan', data.jumlahRombongan + ' orang');
+
+    var qrHolder = document.getElementById('qr-holder');
+    qrHolder.innerHTML = '';
+    if(typeof QRCode !== 'undefined'){
+      new QRCode(qrHolder, { text: kode, width: 148, height: 148, colorDark: '#241712', colorLight: '#ffffff' });
+    }
+
+    main.classList.add('confirm-mode');
+    confirmView.classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  document.getElementById('reset-btn').addEventListener('click', function(){
+    form.reset();
+    renderPendamping(1);
+    ditemuiLainWrap.style.display = 'none';
+    form.querySelectorAll('.field.invalid').forEach(function(f){f.classList.remove('invalid');});
+    statusEl.textContent = '';
+    statusEl.classList.remove('error');
+    submitBtn.disabled = false;
+    main.classList.remove('confirm-mode');
+    confirmView.classList.remove('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+})();
+</script>
+</body>
+</html>
