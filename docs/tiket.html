@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiket Kunjungan · SIGAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#FBF6EC;
+    --surface:#FFFFFF;
+    --surface-alt:#F2E8D2;
+    --ink:#241712;
+    --ink-soft:#6B584A;
+    --ink-faint:#8C7A69;
+    --maroon:#7A1F2B;
+    --maroon-deep:#54141C;
+    --maroon-ink:#FBF6EC;
+    --gold:#A5761F;
+    --gold-bright:#C98F2A;
+    --line:#E4D5B4;
+    --focus:#A5761F;
+    --danger:#B3261E;
+    --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+      --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+      --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+      --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+      --danger:#E5837C;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+    --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+    --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+    --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+    --danger:#E5837C;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces', Georgia, serif; font-weight:650; color:var(--ink); text-wrap:balance; margin:0;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;} }
+
+  .wrap{max-width:560px; margin:0 auto; padding:0 20px;}
+
+  header{border-bottom:1px solid var(--line); background:var(--bg);}
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:560px; margin:0 auto; gap:16px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
+  .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
+
+  main{padding:40px 0 64px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--maroon); font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  }
+  .eyebrow::before{content:""; width:16px; height:2px; background:var(--gold); display:inline-block;}
+  h1.page-title{font-size:clamp(1.5rem,4vw,1.9rem); line-height:1.2; margin-bottom:10px;}
+  .page-sub{color:var(--ink-soft); font-size:0.96rem; margin-bottom:28px;}
+
+  .lookup-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:24px;
+    box-shadow:var(--shadow); display:flex; flex-direction:column; gap:14px;
+  }
+  .field{display:flex; flex-direction:column; gap:6px;}
+  label{font-size:0.84rem; font-weight:600; color:var(--ink);}
+  input[type="text"]{
+    font-family:'IBM Plex Mono',monospace; font-size:1rem; letter-spacing:0.03em; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:9px;
+    padding:12px 13px; width:100%; text-transform:uppercase;
+  }
+  input:focus{border-color:var(--gold);}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 24px;
+    border-radius:9px; font-weight:600; font-size:0.95rem; border:1px solid transparent; cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .btn-primary{background:var(--maroon); color:var(--maroon-ink);}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--maroon); color:var(--maroon);}
+
+  .lookup-status{font-size:0.86rem; color:var(--ink-soft); min-height:1.2em;}
+  .lookup-status.error{color:var(--danger);}
+
+  .confirm{display:none; flex-direction:column; align-items:center; text-align:center; gap:4px;}
+  .confirm.active{display:flex;}
+  .confirm-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:32px;
+    box-shadow:var(--shadow); max-width:380px; width:100%;
+  }
+  .confirm-badge{
+    width:44px; height:44px; border-radius:50%; background:color-mix(in srgb, var(--gold) 18%, transparent);
+    color:var(--gold-bright); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;
+  }
+  .confirm-card h2{font-size:1.25rem; margin-bottom:6px;}
+  .confirm-card p.lead{color:var(--ink-soft); font-size:0.9rem; margin-bottom:22px;}
+  #qr-holder{display:flex; justify-content:center; margin-bottom:16px; padding:12px; background:#fff; border-radius:10px; border:1px solid var(--line); width:fit-content; margin-left:auto; margin-right:auto;}
+  .kode{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:1.15rem; color:var(--maroon);
+    letter-spacing:0.02em; margin-bottom:22px;
+  }
+  .status-pill{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-transform:uppercase;
+    letter-spacing:0.05em; font-weight:600; color:var(--gold-bright);
+    background:color-mix(in srgb, var(--maroon) 12%, transparent); padding:5px 11px; border-radius:6px; margin-bottom:16px;
+  }
+  .summary{text-align:left; border-top:1px dashed var(--line); padding-top:16px; display:flex; flex-direction:column; gap:10px; margin-bottom:0;}
+  .summary .row{display:flex; justify-content:space-between; gap:12px; font-size:0.86rem;}
+  .summary .row dt{color:var(--ink-faint); flex-shrink:0;}
+  .summary .row dd{margin:0; font-weight:600; text-align:right;}
+  .confirm-note{font-size:0.8rem; color:var(--ink-faint); margin-top:18px; max-width:340px;}
+
+  .ticket-face{padding-bottom:4px;}
+  .ticket-actions{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:24px 0 14px;}
+  .ticket-actions .btn{flex:1 1 auto;}
+
+  footer{padding:24px 0; border-top:1px solid var(--line); text-align:center;}
+  footer p{font-size:0.8rem; color:var(--ink-faint); margin:0;}
+
+  @media print{
+    header, footer, .lookup-card, .page-header, .confirm-note, .ticket-actions, #back-btn{display:none !important;}
+    body{background:#fff;}
+    main{padding:0;}
+    .wrap{max-width:100%; padding:0;}
+    .confirm-card{box-shadow:none; border:1px solid #ccc; margin:20px auto;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span class="mark">SG</span>
+      <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
+    </div>
+    <a class="btn btn-ghost" href="index.html">Beranda SIGAP</a>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap">
+    <div class="page-header" id="lookup-block">
+      <span class="eyebrow">Cek Tiket Kunjungan</span>
+      <h1 class="page-title">Buka kembali tiket kunjungan Anda</h1>
+      <p class="page-sub">Masukkan kode kunjungan yang diberikan saat pra-registrasi (format SGP-YYYYMMDD-XXXX) untuk menampilkan ulang tiket dan kode QR.</p>
+
+      <div class="lookup-card">
+        <form id="lookup-form">
+          <div class="field">
+            <label for="kode-input">Kode Kunjungan</label>
+            <input type="text" id="kode-input" name="kode-input" placeholder="SGP-20260916-AB12" autocomplete="off" required>
+          </div>
+          <div style="margin-top:14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary" id="lookup-btn">Tampilkan Tiket</button>
+            <span class="lookup-status" id="lookup-status"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap confirm" id="confirm-view">
+    <div class="confirm-card">
+      <div class="ticket-face" id="ticket-face">
+        <div class="confirm-badge">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l4.5 4.5L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <h2>Tiket Kunjungan Anda</h2>
+        <p class="lead">Tunjukkan kode QR ini kepada petugas keamanan saat tiba di lobi.</p>
+        <span class="status-pill" id="status-pill"></span>
+        <div id="qr-holder"></div>
+        <div class="kode" id="kode-display"></div>
+        <dl class="summary" id="summary-list"></dl>
+      </div>
+      <div class="ticket-actions">
+        <button type="button" class="btn btn-primary" id="print-btn">Cetak / Simpan PDF</button>
+        <button type="button" class="btn btn-ghost" id="download-btn">Unduh Gambar Tiket</button>
+      </div>
+      <button type="button" class="btn btn-ghost" id="back-btn">Cari Tiket Lain</button>
+    </div>
+    <p class="confirm-note">Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.</p>
+  </div>
+</main>
+
+<footer>
+  <p>SIGAP — Sistem Informasi Gerbang Antrian Pengunjung · Sekretariat DPRD Kabupaten Solok</p>
+</footer>
+
+<script>
+(function(){
+  var SUPABASE_URL = 'https://bekpxjxxpnseizmvysyo.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla3B4anh4cG5zZWl6bXZ5c3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMjgxNDUsImV4cCI6MjEwNDYwNDE0NX0.iiDyGIoOiUkKIyMz1lkZtOsPQSfMnFCUOnPnoTJgaIY';
+
+  var sb = null;
+  try{
+    if(window.supabase && window.supabase.createClient){
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  }catch(e){ sb = null; }
+
+  var lookupBlock = document.getElementById('lookup-block');
+  var lookupForm = document.getElementById('lookup-form');
+  var kodeInput = document.getElementById('kode-input');
+  var lookupBtn = document.getElementById('lookup-btn');
+  var statusEl = document.getElementById('lookup-status');
+  var confirmView = document.getElementById('confirm-view');
+
+  function fieldRow(label, value){
+    if(!value) return '';
+    return '<div class="row"><dt>' + label + '</dt><dd>' + value + '</dd></div>';
+  }
+
+  function humanizeStatus(status){
+    if(!status || status === 'menunggu-checkin') return 'Menunggu Check-in';
+    if(status === 'selesai') return 'Sudah Check-in';
+    return status.split('-').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+  }
+
+  function showTicket(row){
+    document.getElementById('status-pill').textContent = humanizeStatus(row.status);
+    document.getElementById('kode-display').textContent = row.kode_kunjungan;
+    var summary = document.getElementById('summary-list');
+    summary.innerHTML =
+      fieldRow('Nama', row.nama) +
+      fieldRow('Instansi', row.instansi) +
+      fieldRow('Ditemui', row.ditemui) +
+      fieldRow('Jadwal', row.tanggal_kunjungan + ' · ' + (row.jam_kunjungan || '').slice(0,5)) +
+      fieldRow('Rombongan', (row.jumlah_rombongan || 1) + ' orang');
+
+    var qrHolder = document.getElementById('qr-holder');
+    qrHolder.innerHTML = '';
+    if(typeof QRCode !== 'undefined'){
+      new QRCode(qrHolder, { text: row.kode_kunjungan, width: 148, height: 148, colorDark: '#241712', colorLight: '#ffffff' });
+    }
+
+    lookupBlock.style.display = 'none';
+    confirmView.classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function showLookupError(msg){
+    statusEl.textContent = msg;
+    statusEl.classList.add('error');
+  }
+
+  function runLookup(kodeRaw){
+    var kode = (kodeRaw || '').trim().toUpperCase();
+    if(!kode){
+      showLookupError('Masukkan kode kunjungan Anda.');
+      return;
+    }
+    if(!sb){
+      showLookupError('Sistem tidak dapat terhubung ke database saat ini. Coba lagi nanti.');
+      return;
+    }
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Mencari tiket...';
+    lookupBtn.disabled = true;
+
+    sb.rpc('get_registration_by_kode', { p_kode: kode }).then(function(res){
+      lookupBtn.disabled = false;
+      var row = res.data && res.data[0];
+      if(res.error || !row){
+        statusEl.textContent = '';
+        showLookupError('Kode tidak ditemukan. Periksa kembali penulisan kode kunjungan Anda.');
+        return;
+      }
+      statusEl.textContent = '';
+      showTicket(row);
+    }).catch(function(){
+      lookupBtn.disabled = false;
+      statusEl.textContent = '';
+      showLookupError('Gagal terhubung ke server. Periksa koneksi internet Anda.');
+    });
+  }
+
+  lookupForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    runLookup(kodeInput.value);
+  });
+
+  document.getElementById('back-btn').addEventListener('click', function(){
+    confirmView.classList.remove('active');
+    lookupBlock.style.display = '';
+    statusEl.textContent = '';
+    statusEl.classList.remove('error');
+    kodeInput.value = '';
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  document.getElementById('print-btn').addEventListener('click', function(){
+    window.print();
+  });
+
+  document.getElementById('download-btn').addEventListener('click', function(){
+    var btn = this;
+    var original = btn.textContent;
+    var kode = document.getElementById('kode-display').textContent || 'tiket';
+    if(typeof html2canvas === 'undefined'){
+      alert('Fitur unduh gambar tidak tersedia saat ini. Gunakan tombol cetak sebagai alternatif.');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Menyiapkan gambar...';
+    html2canvas(document.getElementById('ticket-face'), { backgroundColor:'#ffffff', scale:2 }).then(function(canvas){
+      var link = document.createElement('a');
+      link.download = 'tiket-kunjungan-' + kode + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(function(){
+      alert('Gagal membuat gambar tiket. Gunakan tombol cetak sebagai alternatif.');
+    }).then(function(){
+      btn.disabled = false;
+      btn.textContent = original;
+    });
+  });
+
+  var params = new URLSearchParams(window.location.search);
+  var kodeFromUrl = params.get('kode');
+  if(kodeFromUrl){
+    kodeInput.value = kodeFromUrl.toUpperCase();
+    runLookup(kodeFromUrl);
+  }
+})();
+</script>
+
+</body>
+</html>
