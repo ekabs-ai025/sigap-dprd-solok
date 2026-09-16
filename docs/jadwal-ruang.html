@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jadwal & Kapasitas Ruang · SIGAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
+    --ink:#241712; --ink-soft:#6B584A; --ink-faint:#8C7A69;
+    --maroon:#7A1F2B; --maroon-deep:#54141C; --maroon-ink:#FBF6EC;
+    --gold:#A5761F; --gold-bright:#C98F2A; --line:#E4D5B4; --focus:#A5761F;
+    --danger:#B3261E; --ok:#2E7D32; --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+      --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+      --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+      --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+      --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+    --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+    --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+    --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+    --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces', Georgia, serif; font-weight:650; color:var(--ink); margin:0;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .wrap{max-width:860px; margin:0 auto; padding:0 20px;}
+  header{border-bottom:1px solid var(--line); background:var(--bg);}
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:860px; margin:0 auto; gap:12px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
+  .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
+  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right;}
+  .who a{color:var(--maroon); font-weight:600; text-decoration:none; font-size:0.78rem;}
+
+  main{padding:32px 0 64px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--maroon); font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:12px;
+  }
+  .eyebrow::before{content:""; width:16px; height:2px; background:var(--gold); display:inline-block;}
+  h1.page-title{font-size:clamp(1.4rem,4vw,1.8rem); margin-bottom:28px;}
+
+  section.panel-block{margin-bottom:32px;}
+  section.panel-block h2{font-size:1.1rem; margin-bottom:14px;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px;
+    box-shadow:var(--shadow);
+  }
+
+  .room-list{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;}
+  .room-card{
+    flex:1 1 180px; border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--surface);
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .room-card .nama{font-weight:600; font-size:0.94rem;}
+  .room-card .kap{font-size:0.8rem; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+  .room-card .del{align-self:flex-end; margin-top:6px; font-size:0.76rem; color:var(--danger); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:560px){ .grid2{grid-template-columns:1fr;} }
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
+  .field.full{grid-column:1 / -1;}
+  label{font-size:0.84rem; font-weight:600;}
+  input[type="text"], input[type="date"], input[type="time"], input[type="number"], select{
+    font-family:'Public Sans',sans-serif; font-size:0.94rem; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:9px;
+    padding:10px 12px; width:100%;
+  }
+  input:focus, select:focus{border-color:var(--gold);}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 20px;
+    border-radius:9px; font-weight:600; font-size:0.9rem; border:1px solid transparent; cursor:pointer;
+    transition:background .15s ease;
+  }
+  .btn-primary{background:var(--maroon); color:var(--maroon-ink);}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--maroon); color:var(--maroon);}
+  .btn-sm{padding:7px 14px; font-size:0.82rem;}
+
+  .form-status{font-size:0.86rem; color:var(--ink-soft); margin-top:6px; min-height:1.2em;}
+  .form-status.error{color:var(--danger);}
+  .form-status.ok{color:var(--ok);}
+
+  .inline-add{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+  .inline-add .field{margin-bottom:0; min-width:140px; flex:1;}
+
+  .filter-row{display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;}
+  .filter-row input[type="date"]{max-width:200px;}
+
+  .booking-list{display:flex; flex-direction:column; gap:10px;}
+  .booking-row{
+    border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--surface);
+    display:flex; justify-content:space-between; gap:14px; align-items:flex-start; flex-wrap:wrap;
+  }
+  .booking-row .info{flex:1; min-width:200px;}
+  .booking-row .room-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.04em;
+    color:var(--gold-bright); background:color-mix(in srgb, var(--maroon) 12%, transparent); padding:3px 9px; border-radius:5px; margin-bottom:6px; display:inline-block;
+  }
+  .booking-row .time{font-family:'IBM Plex Mono',monospace; font-size:0.86rem; color:var(--maroon); font-weight:600; margin-bottom:4px;}
+  .booking-row .keperluan{font-size:0.9rem; margin-bottom:2px;}
+  .booking-row .meta{font-size:0.78rem; color:var(--ink-faint);}
+  .empty-msg{color:var(--ink-faint); font-size:0.9rem; padding:20px; text-align:center;}
+
+  footer{padding:24px 0; border-top:1px solid var(--line); text-align:center;}
+  footer p{font-size:0.8rem; color:var(--ink-faint); margin:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span class="mark">SG</span>
+      <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
+    </div>
+    <div class="who">
+      <div id="staff-email">…</div>
+      <a href="verifikasi.html">Verifikasi</a> · <a href="admin.html">Rekap Kunjungan</a> · <a href="#" id="logout-link">Keluar</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <span class="eyebrow">Jadwal &amp; Kapasitas Ruang</span>
+    <h1 class="page-title">Kelola jadwal ruang rapat &amp; ruang tamu pimpinan</h1>
+
+    <section class="panel-block">
+      <h2>Daftar Ruang</h2>
+      <div class="room-list" id="room-list"></div>
+      <div class="card">
+        <div class="inline-add">
+          <div class="field">
+            <label for="room-nama">Nama Ruang Baru</label>
+            <input type="text" id="room-nama" placeholder="mis. Ruang Rapat Komisi I">
+          </div>
+          <div class="field" style="max-width:140px;">
+            <label for="room-kapasitas">Kapasitas</label>
+            <input type="number" id="room-kapasitas" min="1" placeholder="orang">
+          </div>
+          <button type="button" class="btn btn-ghost" id="add-room-btn">Tambah Ruang</button>
+        </div>
+        <p class="form-status" id="room-status"></p>
+      </div>
+    </section>
+
+    <section class="panel-block">
+      <h2>Jadwalkan Ruang</h2>
+      <div class="card">
+        <div class="grid2">
+          <div class="field">
+            <label for="booking-room">Ruang</label>
+            <select id="booking-room"></select>
+          </div>
+          <div class="field">
+            <label for="booking-tanggal">Tanggal</label>
+            <input type="date" id="booking-tanggal">
+          </div>
+          <div class="field">
+            <label for="booking-mulai">Jam Mulai</label>
+            <input type="time" id="booking-mulai">
+          </div>
+          <div class="field">
+            <label for="booking-selesai">Jam Selesai</label>
+            <input type="time" id="booking-selesai">
+          </div>
+          <div class="field full">
+            <label for="booking-keperluan">Keperluan</label>
+            <input type="text" id="booking-keperluan" placeholder="mis. Audiensi Dinas PUPR">
+          </div>
+          <div class="field full">
+            <label for="booking-kode">Kode Kunjungan Tamu <span style="font-weight:400; color:var(--ink-faint);">(opsional, kalau terkait pra-registrasi tamu)</span></label>
+            <input type="text" id="booking-kode" placeholder="SGP-20260916-AB12" style="text-transform:uppercase; font-family:'IBM Plex Mono',monospace;">
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="book-btn">Jadwalkan Ruang</button>
+        <p class="form-status" id="booking-status"></p>
+      </div>
+    </section>
+
+    <section class="panel-block">
+      <h2>Jadwal per Tanggal</h2>
+      <div class="filter-row">
+        <input type="date" id="filter-tanggal">
+        <button type="button" class="btn btn-ghost btn-sm" id="refresh-schedule-btn">Muat Ulang</button>
+      </div>
+      <div class="booking-list" id="booking-list"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>SIGAP — Sistem Informasi Gerbang Antrian Pengunjung · Sekretariat DPRD Kabupaten Solok</p>
+</footer>
+
+<script>
+(function(){
+  var SUPABASE_URL = 'https://bekpxjxxpnseizmvysyo.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla3B4anh4cG5zZWl6bXZ5c3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMjgxNDUsImV4cCI6MjEwNDYwNDE0NX0.iiDyGIoOiUkKIyMz1lkZtOsPQSfMnFCUOnPnoTJgaIY';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var staffEmailEl = document.getElementById('staff-email');
+  var roomListEl = document.getElementById('room-list');
+  var roomSelectEl = document.getElementById('booking-room');
+  var roomStatusEl = document.getElementById('room-status');
+  var bookingStatusEl = document.getElementById('booking-status');
+  var bookingListEl = document.getElementById('booking-list');
+  var filterTanggalEl = document.getElementById('filter-tanggal');
+
+  var rooms = [];
+
+  sb.auth.getSession().then(function(res){
+    var session = res.data && res.data.session;
+    if(!session){
+      window.location.href = 'login.html';
+      return;
+    }
+    staffEmailEl.textContent = session.user.email;
+    loadRooms();
+    var todayWib = wibToday();
+    filterTanggalEl.value = todayWib;
+    document.getElementById('booking-tanggal').value = todayWib;
+    loadSchedule();
+  });
+
+  document.getElementById('logout-link').addEventListener('click', function(e){
+    e.preventDefault();
+    sb.auth.signOut().then(function(){ window.location.href = 'login.html'; });
+  });
+
+  function wibToday(){
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
+    return parts;
+  }
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function fmtTimeWib(iso){
+    return new Intl.DateTimeFormat('id-ID', { timeZone:'Asia/Jakarta', hour:'2-digit', minute:'2-digit' }).format(new Date(iso));
+  }
+
+  function loadRooms(){
+    sb.from('rooms').select('*').order('nama').then(function(res){
+      if(res.error){
+        roomListEl.innerHTML = '<p class="empty-msg">Gagal memuat daftar ruang.</p>';
+        return;
+      }
+      rooms = res.data || [];
+      renderRooms();
+    });
+  }
+
+  function renderRooms(){
+    roomListEl.innerHTML = rooms.map(function(r){
+      return '<div class="room-card" data-id="' + r.id + '">' +
+        '<span class="nama">' + escapeHtml(r.nama) + '</span>' +
+        '<span class="kap">Kapasitas ' + (r.kapasitas || '—') + ' orang</span>' +
+        '<button type="button" class="del" data-id="' + r.id + '">Hapus</button>' +
+      '</div>';
+    }).join('') || '<p class="empty-msg">Belum ada ruang.</p>';
+
+    roomSelectEl.innerHTML = rooms.map(function(r){
+      return '<option value="' + r.id + '">' + escapeHtml(r.nama) + (r.kapasitas ? ' (maks ' + r.kapasitas + ' orang)' : '') + '</option>';
+    }).join('') || '<option value="">— Belum ada ruang —</option>';
+
+    roomListEl.querySelectorAll('.del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-id');
+        if(!confirm('Hapus ruang ini? Semua jadwal untuk ruang ini juga akan terhapus.')) return;
+        sb.from('rooms').delete().eq('id', id).then(function(res){
+          if(res.error){
+            alert('Gagal menghapus ruang: ' + res.error.message);
+            return;
+          }
+          loadRooms();
+          loadSchedule();
+        });
+      });
+    });
+  }
+
+  document.getElementById('add-room-btn').addEventListener('click', function(){
+    var nama = document.getElementById('room-nama').value.trim();
+    var kapasitas = document.getElementById('room-kapasitas').value;
+    roomStatusEl.classList.remove('error','ok');
+    if(!nama){
+      roomStatusEl.textContent = 'Nama ruang wajib diisi.';
+      roomStatusEl.classList.add('error');
+      return;
+    }
+    sb.from('rooms').insert({ nama: nama, kapasitas: kapasitas ? parseInt(kapasitas,10) : null }).then(function(res){
+      if(res.error){
+        roomStatusEl.textContent = 'Gagal menambah ruang: ' + res.error.message;
+        roomStatusEl.classList.add('error');
+        return;
+      }
+      roomStatusEl.textContent = 'Ruang ditambahkan.';
+      roomStatusEl.classList.add('ok');
+      document.getElementById('room-nama').value = '';
+      document.getElementById('room-kapasitas').value = '';
+      loadRooms();
+    });
+  });
+
+  document.getElementById('book-btn').addEventListener('click', function(){
+    var roomId = roomSelectEl.value;
+    var tanggal = document.getElementById('booking-tanggal').value;
+    var mulai = document.getElementById('booking-mulai').value;
+    var selesai = document.getElementById('booking-selesai').value;
+    var keperluan = document.getElementById('booking-keperluan').value.trim();
+    var kode = document.getElementById('booking-kode').value.trim().toUpperCase();
+    var btn = this;
+
+    bookingStatusEl.classList.remove('error','ok');
+
+    if(!roomId || !tanggal || !mulai || !selesai || !keperluan){
+      bookingStatusEl.textContent = 'Lengkapi ruang, tanggal, jam mulai, jam selesai, dan keperluan.';
+      bookingStatusEl.classList.add('error');
+      return;
+    }
+
+    var startIso = tanggal + 'T' + mulai + ':00+07:00';
+    var endIso = tanggal + 'T' + selesai + ':00+07:00';
+
+    btn.disabled = true;
+    bookingStatusEl.textContent = 'Menyimpan...';
+
+    sb.rpc('book_room', {
+      p_room_id: roomId,
+      p_start_at: startIso,
+      p_end_at: endIso,
+      p_keperluan: keperluan,
+      p_kode_kunjungan: kode || null
+    }).then(function(res){
+      btn.disabled = false;
+      if(res.error){
+        bookingStatusEl.textContent = 'Gagal: ' + res.error.message;
+        bookingStatusEl.classList.add('error');
+        return;
+      }
+      var row = res.data && res.data[0];
+      if(!row || row.result !== 'success'){
+        bookingStatusEl.textContent = row ? row.message : 'Gagal menjadwalkan ruang.';
+        bookingStatusEl.classList.add('error');
+        return;
+      }
+      bookingStatusEl.textContent = row.message;
+      bookingStatusEl.classList.add('ok');
+      document.getElementById('booking-keperluan').value = '';
+      document.getElementById('booking-kode').value = '';
+      filterTanggalEl.value = tanggal;
+      loadSchedule();
+    }).catch(function(){
+      btn.disabled = false;
+      bookingStatusEl.textContent = 'Gagal terhubung ke server.';
+      bookingStatusEl.classList.add('error');
+    });
+  });
+
+  document.getElementById('refresh-schedule-btn').addEventListener('click', loadSchedule);
+  filterTanggalEl.addEventListener('change', loadSchedule);
+
+  function loadSchedule(){
+    var tanggal = filterTanggalEl.value;
+    if(!tanggal) return;
+    bookingListEl.innerHTML = '<p class="empty-msg">Memuat jadwal...</p>';
+
+    var dayStartIso = tanggal + 'T00:00:00+07:00';
+    var dayEndIso = tanggal + 'T23:59:59+07:00';
+
+    sb.from('room_bookings')
+      .select('*, rooms(nama), registrations(nama, instansi)')
+      .gte('start_at', dayStartIso)
+      .lte('start_at', dayEndIso)
+      .order('start_at')
+      .then(function(res){
+        if(res.error){
+          bookingListEl.innerHTML = '<p class="empty-msg">Gagal memuat jadwal: ' + escapeHtml(res.error.message) + '</p>';
+          return;
+        }
+        var rows = res.data || [];
+        if(rows.length === 0){
+          bookingListEl.innerHTML = '<p class="empty-msg">Belum ada jadwal untuk tanggal ini.</p>';
+          return;
+        }
+        bookingListEl.innerHTML = rows.map(function(b){
+          var roomName = b.rooms ? b.rooms.nama : '(ruang tidak diketahui)';
+          var tamu = b.registrations ? (' · Tamu: ' + escapeHtml(b.registrations.nama) + ' (' + escapeHtml(b.registrations.instansi) + ')') : '';
+          return '<div class="booking-row" data-id="' + b.id + '">' +
+            '<div class="info">' +
+              '<span class="room-tag">' + escapeHtml(roomName) + '</span>' +
+              '<div class="time">' + fmtTimeWib(b.start_at) + ' – ' + fmtTimeWib(b.end_at) + ' WIB</div>' +
+              '<div class="keperluan">' + escapeHtml(b.keperluan) + '</div>' +
+              '<div class="meta">' + tamu.replace(/^ · /,'') + '</div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-ghost btn-sm del-booking" data-id="' + b.id + '">Hapus</button>' +
+          '</div>';
+        }).join('');
+
+        bookingListEl.querySelectorAll('.del-booking').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var id = btn.getAttribute('data-id');
+            if(!confirm('Hapus jadwal ini?')) return;
+            sb.from('room_bookings').delete().eq('id', id).then(function(res){
+              if(res.error){
+                alert('Gagal menghapus jadwal: ' + res.error.message);
+                return;
+              }
+              loadSchedule();
+            });
+          });
+        });
+      });
+  }
+})();
+</script>
+
+</body>
+</html>
