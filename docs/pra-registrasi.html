@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pra-Registrasi SIGAP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
     --bg:#FBF6EC;
@@ -91,6 +92,11 @@
   }
   textarea{resize:vertical; min-height:72px; font-family:inherit;}
   input:focus, select:focus, textarea:focus{border-color:var(--gold);}
+  input[type="date"], input[type="time"]{cursor:pointer;}
+  input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator{
+    cursor:pointer; padding:4px; margin-right:-2px; opacity:0.75;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover, input[type="time"]::-webkit-calendar-picker-indicator:hover{opacity:1;}
   .err{font-size:0.78rem; color:var(--danger); min-height:1em; display:none;}
   .field.invalid .err{display:block;}
   .field.invalid input, .field.invalid select, .field.invalid textarea{border-color:var(--danger);}
@@ -140,14 +146,29 @@
     font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:1.15rem; color:var(--maroon);
     letter-spacing:0.02em; margin-bottom:22px;
   }
-  .summary{text-align:left; border-top:1px dashed var(--line); padding-top:16px; display:flex; flex-direction:column; gap:10px; margin-bottom:22px;}
+  .summary{text-align:left; border-top:1px dashed var(--line); padding-top:16px; display:flex; flex-direction:column; gap:10px; margin-bottom:0;}
   .summary .row{display:flex; justify-content:space-between; gap:12px; font-size:0.86rem;}
   .summary .row dt{color:var(--ink-faint); flex-shrink:0;}
   .summary .row dd{margin:0; font-weight:600; text-align:right;}
   .confirm-note{font-size:0.8rem; color:var(--ink-faint); margin-top:18px; max-width:340px;}
 
+  .ticket-face{padding-bottom:4px;}
+  .ticket-actions{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:24px 0 14px;}
+  .ticket-actions .btn{flex:1 1 auto;}
+  .ticket-link-note{font-size:0.78rem; color:var(--ink-faint); margin:0 0 18px; word-break:break-all;}
+  .ticket-link-note a{color:var(--maroon); font-weight:600; text-decoration:none;}
+  .ticket-link-note a:hover{text-decoration:underline;}
+
   footer{padding:24px 0; border-top:1px solid var(--line); text-align:center;}
   footer p{font-size:0.8rem; color:var(--ink-faint); margin:0;}
+
+  @media print{
+    header, footer, .page-header, .banner, #reg-form, .confirm-note, .ticket-actions, .ticket-link-note, #reset-btn{display:none !important;}
+    body{background:#fff;}
+    main{padding:0;}
+    .wrap{max-width:100%; padding:0;}
+    .confirm-card{box-shadow:none; border:1px solid #ccc; margin:20px auto;}
+  }
 </style>
 </head>
 <body>
@@ -176,23 +197,23 @@
       <span>Penyimpanan data pra-registrasi sedang tidak tersedia. Silakan coba lagi nanti, atau hubungi Bagian Umum &amp; Protokol Sekretariat.</span>
     </div>
 
-    <form id="reg-form" novalidate>
+    <form id="reg-form" novalidate="">
       <fieldset>
         <legend>Data Tamu</legend>
         <div class="grid2">
           <div class="field full">
             <label for="nama">Nama Lengkap <span class="opt">(wajib)</span></label>
-            <input type="text" id="nama" name="nama" required autocomplete="name">
+            <input type="text" id="nama" name="nama" required="" autocomplete="name">
             <span class="err">Nama wajib diisi.</span>
           </div>
           <div class="field">
             <label for="instansi">Instansi / Asal <span class="opt">(wajib)</span></label>
-            <input type="text" id="instansi" name="instansi" required placeholder="mis. Dinas PUPR Kab. Solok">
+            <input type="text" id="instansi" name="instansi" required="" placeholder="mis. Dinas PUPR Kab. Solok">
             <span class="err">Instansi wajib diisi.</span>
           </div>
           <div class="field">
             <label for="hp">No. HP / WhatsApp <span class="opt">(wajib)</span></label>
-            <input type="tel" id="hp" name="hp" required placeholder="08xxxxxxxxxx" pattern="[0-9+\-\s]{8,16}">
+            <input type="tel" id="hp" name="hp" required="" placeholder="08xxxxxxxxxx" pattern="[0-9+\-\s]{8,16}">
             <span class="err">Masukkan nomor HP yang valid (8–16 digit).</span>
           </div>
           <div class="field">
@@ -212,12 +233,12 @@
         <div class="grid2">
           <div class="field full">
             <label for="keperluan">Keperluan Kunjungan <span class="opt">(wajib)</span></label>
-            <textarea id="keperluan" name="keperluan" required placeholder="mis. Audiensi program infrastruktur 2026"></textarea>
+            <textarea id="keperluan" name="keperluan" required="" placeholder="mis. Audiensi program infrastruktur 2026"></textarea>
             <span class="err">Keperluan kunjungan wajib diisi.</span>
           </div>
           <div class="field full">
             <label for="ditemui">Pejabat / Unit yang Dituju <span class="opt">(wajib)</span></label>
-            <select id="ditemui" name="ditemui" required>
+            <select id="ditemui" name="ditemui" required="">
               <option value="">— Pilih tujuan —</option>
               <option>Ketua DPRD</option>
               <option>Wakil Ketua DPRD</option>
@@ -235,12 +256,12 @@
           </div>
           <div class="field">
             <label for="tanggal">Tanggal Kunjungan <span class="opt">(wajib)</span></label>
-            <input type="date" id="tanggal" name="tanggal" required>
+            <input type="date" id="tanggal" name="tanggal" required="" min="2026-09-16">
             <span class="err">Pilih tanggal kunjungan (tidak boleh tanggal yang sudah lewat).</span>
           </div>
           <div class="field">
             <label for="jam">Jam Kunjungan <span class="opt">(wajib)</span></label>
-            <input type="time" id="jam" name="jam" required>
+            <input type="time" id="jam" name="jam" required="">
             <span class="err">Pilih jam kunjungan.</span>
           </div>
         </div>
@@ -265,14 +286,21 @@
 
   <div class="wrap confirm" id="confirm-view">
     <div class="confirm-card">
-      <div class="confirm-badge">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l4.5 4.5L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="ticket-face" id="ticket-face">
+        <div class="confirm-badge">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l4.5 4.5L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <h2>Pra-registrasi berhasil</h2>
+        <p class="lead">Simpan atau tangkap layar kode ini. Tunjukkan kepada petugas keamanan saat tiba.</p>
+        <div id="qr-holder"></div>
+        <div class="kode" id="kode-display"></div>
+        <dl class="summary" id="summary-list"></dl>
       </div>
-      <h2>Pra-registrasi berhasil</h2>
-      <p class="lead">Simpan atau tangkap layar kode ini. Tunjukkan kepada petugas keamanan saat tiba.</p>
-      <div id="qr-holder"></div>
-      <div class="kode" id="kode-display"></div>
-      <dl class="summary" id="summary-list"></dl>
+      <div class="ticket-actions">
+        <button type="button" class="btn btn-primary" id="print-btn">Cetak / Simpan PDF</button>
+        <button type="button" class="btn btn-ghost" id="download-btn">Unduh Gambar Tiket</button>
+      </div>
+      <p class="ticket-link-note">Tautan tiket ini (bisa dibuka lagi kapan saja): <a id="ticket-link" href="#" target="_blank" rel="noopener"></a></p>
       <button type="button" class="btn btn-ghost" id="reset-btn">Daftarkan Tamu Lain</button>
     </div>
     <p class="confirm-note">Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.</p>
@@ -312,6 +340,15 @@
   var today = new Date();
   var isoToday = today.toISOString().slice(0,10);
   document.getElementById('tanggal').setAttribute('min', isoToday);
+
+  ['tanggal','jam'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('click', function(){
+      if(typeof el.showPicker === 'function'){
+        try{ el.showPicker(); }catch(e){}
+      }
+    });
+  });
 
   function renderPendamping(n){
     var count = Math.max(0, (parseInt(n,10)||1) - 1);
@@ -460,7 +497,12 @@
           statusEl.classList.add('error');
           return;
         }
-        showConfirmation(kode, formData);
+        try{
+          showConfirmation(kode, formData);
+        }catch(renderErr){
+          submitBtn.disabled = false;
+          statusEl.textContent = 'Tersimpan dengan kode ' + kode + ', namun tampilan tiket gagal dimuat. Catat kode ini.';
+        }
       }).catch(function(){
         submitBtn.disabled = false;
         statusEl.textContent = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
@@ -486,10 +528,44 @@
       new QRCode(qrHolder, { text: kode, width: 148, height: 148, colorDark: '#241712', colorLight: '#ffffff' });
     }
 
+    var relUrl = 'tiket.html?kode=' + encodeURIComponent(kode);
+    var absUrl = relUrl;
+    try{ absUrl = new URL(relUrl, window.location.href).href; }catch(e){}
+    var linkEl = document.getElementById('ticket-link');
+    linkEl.href = relUrl;
+    linkEl.textContent = absUrl;
+
     main.classList.add('confirm-mode');
     confirmView.classList.add('active');
     window.scrollTo({top:0, behavior:'smooth'});
   }
+
+  document.getElementById('print-btn').addEventListener('click', function(){
+    window.print();
+  });
+
+  document.getElementById('download-btn').addEventListener('click', function(){
+    var btn = this;
+    var original = btn.textContent;
+    var kode = document.getElementById('kode-display').textContent || 'tiket';
+    if(typeof html2canvas === 'undefined'){
+      alert('Fitur unduh gambar tidak tersedia saat ini. Gunakan tombol cetak sebagai alternatif.');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Menyiapkan gambar...';
+    html2canvas(document.getElementById('ticket-face'), { backgroundColor:'#ffffff', scale:2 }).then(function(canvas){
+      var link = document.createElement('a');
+      link.download = 'tiket-kunjungan-' + kode + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(function(){
+      alert('Gagal membuat gambar tiket. Gunakan tombol cetak sebagai alternatif.');
+    }).then(function(){
+      btn.disabled = false;
+      btn.textContent = original;
+    });
+  });
 
   document.getElementById('reset-btn').addEventListener('click', function(){
     form.reset();
@@ -505,5 +581,6 @@
   });
 })();
 </script>
+
 </body>
 </html>
