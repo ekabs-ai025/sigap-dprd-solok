@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login Staf · SIGAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
+    --ink:#241712; --ink-soft:#6B584A; --ink-faint:#8C7A69;
+    --maroon:#7A1F2B; --maroon-deep:#54141C; --maroon-ink:#FBF6EC;
+    --gold:#A5761F; --gold-bright:#C98F2A; --line:#E4D5B4; --focus:#A5761F;
+    --danger:#B3261E; --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+      --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+      --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+      --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+      --danger:#E5837C; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+    --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+    --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+    --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+    --danger:#E5837C; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+  }
+  h1{font-family:'Fraunces', Georgia, serif; font-weight:650; color:var(--ink); margin:0;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:34px; max-width:380px; width:100%; box-shadow:var(--shadow); margin:24px;
+  }
+  .brand{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+  .brand .mark{width:34px; height:34px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.85rem; flex-shrink:0;}
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.68rem; color:var(--ink-soft);}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--maroon); font-weight:500; margin-bottom:10px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:""; width:16px; height:2px; background:var(--gold); display:inline-block;}
+  h1{font-size:1.4rem; margin-bottom:8px;}
+  .sub{color:var(--ink-soft); font-size:0.9rem; margin-bottom:24px;}
+
+  form{display:flex; flex-direction:column; gap:16px;}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  label{font-size:0.84rem; font-weight:600;}
+  input[type="email"], input[type="password"]{
+    font-family:'Public Sans',sans-serif; font-size:0.94rem; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:9px;
+    padding:11px 13px; width:100%;
+  }
+  input:focus{border-color:var(--gold);}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 24px;
+    border-radius:9px; font-weight:600; font-size:0.95rem; border:1px solid transparent; cursor:pointer;
+    transition:background .15s ease; background:var(--maroon); color:var(--maroon-ink);
+  }
+  .btn:hover{background:var(--maroon-deep);}
+  .btn:disabled{opacity:0.6; cursor:not-allowed;}
+
+  .status{font-size:0.86rem; color:var(--ink-soft); min-height:1.2em;}
+  .status.error{color:var(--danger);}
+  .back{display:block; text-align:center; margin-top:20px; font-size:0.84rem; color:var(--ink-faint); text-decoration:none;}
+  .back:hover{color:var(--maroon);}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <span class="mark">SG</span>
+    <div>SIGAP<small>Sekretariat DPRD Kabupaten Solok</small></div>
+  </div>
+  <span class="eyebrow">Akses Staf</span>
+  <h1>Login Petugas Verifikasi</h1>
+  <p class="sub">Khusus staf/petugas keamanan yang berwenang memverifikasi kunjungan tamu.</p>
+
+  <form id="login-form">
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="password">Kata Sandi</label>
+      <input type="password" id="password" name="password" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn" id="login-btn">Masuk</button>
+    <span class="status" id="login-status"></span>
+  </form>
+
+  <a class="back" href="index.html">← Kembali ke Beranda SIGAP</a>
+</div>
+
+<script>
+(function(){
+  var SUPABASE_URL = 'https://bekpxjxxpnseizmvysyo.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla3B4anh4cG5zZWl6bXZ5c3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMjgxNDUsImV4cCI6MjEwNDYwNDE0NX0.iiDyGIoOiUkKIyMz1lkZtOsPQSfMnFCUOnPnoTJgaIY';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var form = document.getElementById('login-form');
+  var statusEl = document.getElementById('login-status');
+  var btn = document.getElementById('login-btn');
+
+  sb.auth.getSession().then(function(res){
+    if(res.data && res.data.session){
+      window.location.href = 'verifikasi.html';
+    }
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Memeriksa...';
+    btn.disabled = true;
+
+    sb.auth.signInWithPassword({
+      email: document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value
+    }).then(function(res){
+      btn.disabled = false;
+      if(res.error){
+        statusEl.classList.add('error');
+        statusEl.textContent = 'Email atau kata sandi salah.';
+        return;
+      }
+      window.location.href = 'verifikasi.html';
+    }).catch(function(){
+      btn.disabled = false;
+      statusEl.classList.add('error');
+      statusEl.textContent = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
