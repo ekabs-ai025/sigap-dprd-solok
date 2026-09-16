@@ -246,7 +246,13 @@
       busy = false;
       verifyBtn.disabled = false;
       if(res.error){
-        showResult('error', '✕ Gagal memverifikasi', 'Sesi staf mungkin sudah berakhir. Coba login ulang.', null, '');
+        var detail = res.error.message || res.error.code || 'tidak ada detail';
+        showResult('error', '✕ Gagal memverifikasi', 'Detail: ' + detail + '. Jika berulang, coba keluar lalu login ulang.', null,
+          '<button type="button" class="btn btn-ghost" id="relogin-btn">Login Ulang</button>');
+        var reloginBtn = document.getElementById('relogin-btn');
+        if(reloginBtn) reloginBtn.addEventListener('click', function(){
+          sb.auth.signOut().then(function(){ window.location.href = 'login.html'; });
+        });
         return;
       }
       var row = res.data && res.data[0];
