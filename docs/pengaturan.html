@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pengaturan · SIGAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="staff.js"></script>
+<style>
+  :root{
+    --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
+    --ink:#241712; --ink-soft:#6B584A; --ink-faint:#8C7A69;
+    --maroon:#7A1F2B; --maroon-deep:#54141C; --maroon-ink:#FBF6EC;
+    --gold:#A5761F; --gold-bright:#C98F2A; --line:#E4D5B4; --focus:#A5761F;
+    --danger:#B3261E; --ok:#2E7D32; --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+      --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+      --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+      --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+      --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+    --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+    --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+    --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+    --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces', Georgia, serif; font-weight:650; color:var(--ink); margin:0;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .wrap{max-width:860px; margin:0 auto; padding:0 20px;}
+  header{border-bottom:1px solid var(--line); background:var(--bg);}
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:860px; margin:0 auto; gap:12px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
+  .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
+  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right; max-width:75%;}
+  .who a{color:var(--maroon); font-weight:600; text-decoration:none; font-size:0.78rem;}
+  .who-links{line-height:1.5;}
+
+  main{padding:32px 0 64px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--maroon); font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:12px;
+  }
+  .eyebrow::before{content:""; width:16px; height:2px; background:var(--gold); display:inline-block;}
+  h1.page-title{font-size:clamp(1.4rem,4vw,1.9rem); margin-bottom:6px;}
+  .page-sub{color:var(--ink-soft); font-size:0.94rem; margin:0 0 24px; max-width:64ch;}
+
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px 24px; margin-bottom:22px; box-shadow:var(--shadow);}
+  .panel h2{font-size:1.1rem; margin-bottom:4px;}
+  .panel > .sub{color:var(--ink-soft); font-size:0.86rem; margin:0 0 16px;}
+  .hidden{display:none !important;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 16px;
+    border-radius:9px; font-weight:600; font-size:0.86rem; border:1px solid transparent; cursor:pointer;
+    transition:background .15s ease; font-family:inherit;
+  }
+  .btn-primary{background:var(--maroon); color:var(--maroon-ink);}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--maroon); color:var(--maroon);}
+  .btn-danger{background:transparent; border-color:var(--danger); color:var(--danger);}
+  .btn-sm{padding:6px 11px; font-size:0.78rem;}
+
+  input[type="text"], select{
+    font-family:'Public Sans',sans-serif; font-size:0.9rem; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:9px 11px; width:100%;
+  }
+  input:focus, select:focus{border-color:var(--gold);}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+  label{font-size:0.8rem; font-weight:600;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:0 14px;}
+  @media (max-width:600px){ .grid2{grid-template-columns:1fr;} }
+
+  .msg{font-size:0.84rem; min-height:1.3em; margin:8px 0 0; color:var(--ink-soft);}
+  .msg.error{color:var(--danger);}
+  .msg.ok{color:var(--ok);}
+
+  .seg{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+  .seg button{
+    padding:8px 14px; border-radius:9px; border:1px solid var(--line); background:var(--bg);
+    font:inherit; font-weight:600; font-size:0.84rem; cursor:pointer; color:var(--ink-soft);
+  }
+  .seg button.on{background:var(--maroon); border-color:var(--maroon); color:var(--maroon-ink);}
+
+  ul.items{list-style:none; margin:0 0 14px; padding:0; display:flex; flex-direction:column; gap:8px;}
+  ul.items li{display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:10px; padding:8px 12px; background:var(--bg);}
+  ul.items li .nm{flex:1; min-width:0; overflow-wrap:anywhere; font-size:0.9rem;}
+  ul.items li.off .nm{color:var(--ink-faint); text-decoration:line-through;}
+  .add-row{display:flex; gap:10px;}
+  .add-row input{flex:1;}
+
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.68rem;
+    text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint);
+    padding:9px 10px; border-bottom:1px solid var(--line); background:var(--surface-alt);
+  }
+  td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px;}
+  td select{padding:6px 8px; font-size:0.84rem;}
+  .chip{
+    font-family:'IBM Plex Mono',monospace; font-size:0.64rem; text-transform:uppercase; letter-spacing:0.04em;
+    padding:2px 7px; border-radius:5px; font-weight:600; background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold);
+  }
+  .note{font-size:0.82rem; color:var(--ink-soft); background:var(--surface-alt); border-radius:9px; padding:10px 14px; margin-bottom:14px;}
+
+  footer{padding:24px 0; border-top:1px solid var(--line); text-align:center;}
+  footer p{font-size:0.8rem; color:var(--ink-faint); margin:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span class="mark">SG</span>
+      <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
+    </div>
+    <div class="who" id="staff-who">…</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <span class="eyebrow">Pengaturan</span>
+    <h1 class="page-title">Pengaturan sistem</h1>
+    <p class="page-sub">Daftar pilihan pada formulir, kop laporan, dan hak akses petugas dikelola di sini tanpa mengubah kode.</p>
+
+    <section class="panel">
+      <h2>Daftar pilihan</h2>
+      <p class="sub">Topik konsultasi tampil di formulir tamu. Jenis konsumsi dan alasan penolakan dipakai petugas saat verifikasi. Item yang dinonaktifkan tidak muncul lagi, tapi data lama tetap utuh.</p>
+      <div class="seg" id="ref-seg">
+        <button type="button" class="on" data-jenis="topik">Topik konsultasi</button>
+        <button type="button" data-jenis="konsumsi">Jenis konsumsi</button>
+        <button type="button" data-jenis="alasan_tolak">Alasan penolakan</button>
+      </div>
+      <ul class="items" id="ref-list"></ul>
+      <div class="add-row">
+        <input type="text" id="ref-new" maxlength="80" placeholder="Tambah item baru">
+        <button type="button" class="btn btn-primary" id="ref-add">Tambah</button>
+      </div>
+      <p class="msg" id="ref-msg" role="status"></p>
+    </section>
+
+    <section class="panel admin-only hidden" id="sec-kop">
+      <h2>Kop &amp; penandatangan laporan</h2>
+      <p class="sub">Dipakai pada laporan PDF dan Excel. Kosongkan nama dan jabatan bila ingin ditulis tangan.</p>
+      <div class="grid2">
+        <div class="field"><label for="k-kop_baris1">Kop baris 1</label><input type="text" id="k-kop_baris1" maxlength="120"></div>
+        <div class="field"><label for="k-kop_baris2">Kop baris 2</label><input type="text" id="k-kop_baris2" maxlength="120"></div>
+        <div class="field" style="grid-column:1 / -1;"><label for="k-kop_alamat">Alamat</label><input type="text" id="k-kop_alamat" maxlength="200"></div>
+        <div class="field"><label for="k-ttd_kota">Kota penandatanganan</label><input type="text" id="k-ttd_kota" maxlength="80"></div>
+        <div class="field"><label for="k-ttd_jabatan">Jabatan penandatangan</label><input type="text" id="k-ttd_jabatan" maxlength="120" placeholder="mis. Sekretaris DPRD"></div>
+        <div class="field"><label for="k-ttd_nama">Nama penandatangan</label><input type="text" id="k-ttd_nama" maxlength="120"></div>
+      </div>
+      <button type="button" class="btn btn-primary" id="kop-save">Simpan</button>
+      <p class="msg" id="kop-msg" role="status"></p>
+    </section>
+
+    <section class="panel admin-only hidden" id="sec-staff">
+      <h2>Petugas &amp; hak akses</h2>
+      <p class="sub">Akun dibuat di dasbor Supabase (Authentication), lalu perannya ditetapkan di sini. Akun tanpa peran tidak bisa mengakses apa pun.</p>
+      <div class="note">
+        <b>Satpam</b>: scan QR dan lihat jadwal hari ini. <b>Protokol</b>: verifikasi, ruang, konsumsi, rekap, laporan. <b>Admin</b>: semuanya, termasuk pengaturan ini.
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Email</th><th>Peran</th><th>Terakhir masuk</th></tr></thead>
+          <tbody id="staff-body"><tr><td colspan="3">Memuat…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="msg" id="staff-msg" role="status"></p>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>SIGAP — Sistem Informasi Gerbang Antrian Pengunjung · Sekretariat DPRD Kabupaten Solok</p>
+</footer>
+
+<script>
+(function(){
+  var sb = SIGAP.sb;
+  var esc = SIGAP.esc;
+  var S = { role: null, myId: null, jenis: 'topik', items: [] };
+
+  function byId(id){ return document.getElementById(id); }
+  function setMsg(id, text, kind){ var el = byId(id); el.textContent = text || ''; el.className = 'msg' + (kind ? ' ' + kind : ''); }
+
+  SIGAP.guard(['protokol','admin'], function(ctx){
+    S.role = ctx.role;
+    S.myId = ctx.user.id;
+    init();
+  });
+
+  function init(){
+    Array.prototype.forEach.call(byId('ref-seg').querySelectorAll('button'), function(b){
+      b.addEventListener('click', function(){
+        S.jenis = b.getAttribute('data-jenis');
+        Array.prototype.forEach.call(byId('ref-seg').querySelectorAll('button'), function(x){ x.classList.toggle('on', x === b); });
+        setMsg('ref-msg', '');
+        loadRef();
+      });
+    });
+    byId('ref-add').addEventListener('click', addRef);
+    byId('ref-new').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); addRef(); } });
+    byId('ref-list').addEventListener('click', onRefClick);
+    loadRef();
+
+    if(S.role === 'admin'){
+      Array.prototype.forEach.call(document.querySelectorAll('.admin-only'), function(el){ el.classList.remove('hidden'); });
+      byId('kop-save').addEventListener('click', saveKop);
+      byId('staff-body').addEventListener('change', onStaffChange);
+      loadKop();
+      loadStaff();
+    }
+  }
+
+  // ---------- daftar pilihan ----------
+  function loadRef(){
+    byId('ref-list').innerHTML = '<li><span class="nm">Memuat…</span></li>';
+    sb.from('ref_items').select('id,nama,urut,aktif').eq('jenis', S.jenis)
+      .order('urut', { ascending: true }).order('nama', { ascending: true }).then(function(res){
+        if(res.error){ byId('ref-list').innerHTML = '<li><span class="nm">Gagal memuat: ' + esc(res.error.message) + '</span></li>'; return; }
+        S.items = res.data || [];
+        renderRef();
+      });
+  }
+
+  function renderRef(){
+    if(!S.items.length){ byId('ref-list').innerHTML = '<li><span class="nm">Belum ada item.</span></li>'; return; }
+    byId('ref-list').innerHTML = S.items.map(function(it, i){
+      return '<li class="' + (it.aktif ? '' : 'off') + '" data-id="' + esc(it.id) + '">' +
+        '<span class="nm">' + esc(it.nama) + '</span>' + (it.aktif ? '' : '<span class="chip">nonaktif</span>') +
+        '<button type="button" class="btn btn-ghost btn-sm" data-act="naik"' + (i === 0 ? ' disabled' : '') + ' aria-label="Naikkan">↑</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-act="turun"' + (i === S.items.length - 1 ? ' disabled' : '') + ' aria-label="Turunkan">↓</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-act="ubah">Ubah</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-act="toggle">' + (it.aktif ? 'Nonaktifkan' : 'Aktifkan') + '</button>' +
+        '</li>';
+    }).join('');
+  }
+
+  function addRef(){
+    var nama = byId('ref-new').value.trim();
+    if(!nama){ setMsg('ref-msg', 'Isi nama item terlebih dulu.', 'error'); return; }
+    // Item baru ditaruh setelah item biasa terakhir; "Lainnya" (bila ada) selalu tetap di paling bawah.
+    var biasa = S.items.filter(function(x){ return x.nama !== 'Lainnya'; });
+    var urut = biasa.length ? Math.max.apply(null, biasa.map(function(x){ return x.urut; })) + 1 : 1;
+    var lainnya = S.items.filter(function(x){ return x.nama === 'Lainnya'; })[0];
+    var geserLainnya = lainnya && urut >= lainnya.urut;
+    sb.from('ref_items').insert({ jenis: S.jenis, nama: nama, urut: urut }).then(function(res){
+      if(res.error){
+        setMsg('ref-msg', res.error.code === '23505' ? 'Item dengan nama itu sudah ada.' : 'Gagal menambah: ' + res.error.message, 'error');
+        return;
+      }
+      byId('ref-new').value = '';
+      setMsg('ref-msg', 'Item ditambahkan.', 'ok');
+      if(geserLainnya){
+        return sb.from('ref_items').update({ urut: urut + 1 }).eq('id', lainnya.id).then(loadRef);
+      }
+      loadRef();
+    });
+  }
+
+  function onRefClick(e){
+    var btn = e.target.closest('[data-act]');
+    if(!btn) return;
+    var li = btn.closest('li');
+    var id = li.getAttribute('data-id');
+    var idx = -1;
+    S.items.forEach(function(x, i){ if(x.id === id) idx = i; });
+    if(idx < 0) return;
+    var it = S.items[idx];
+    var act = btn.getAttribute('data-act');
+
+    if(act === 'toggle'){
+      update(id, { aktif: !it.aktif });
+    }else if(act === 'ubah'){
+      var baru = window.prompt('Nama baru untuk "' + it.nama + '":', it.nama);
+      if(baru === null) return;
+      baru = baru.trim();
+      if(!baru || baru === it.nama) return;
+      update(id, { nama: baru });
+    }else if(act === 'naik' || act === 'turun'){
+      var j = act === 'naik' ? idx - 1 : idx + 1;
+      if(j < 0 || j >= S.items.length) return;
+      var other = S.items[j];
+      // Tukar urutan. Bila nilai urut sama, beri nilai berbeda agar pertukaran terlihat.
+      var a = it.urut, b = other.urut;
+      if(a === b){ b = act === 'naik' ? a - 1 : a + 1; }
+      Promise.all([
+        sb.from('ref_items').update({ urut: b }).eq('id', it.id),
+        sb.from('ref_items').update({ urut: a }).eq('id', other.id)
+      ]).then(function(rs){
+        var err = rs[0].error || rs[1].error;
+        if(err){ setMsg('ref-msg', 'Gagal mengubah urutan: ' + err.message, 'error'); }
+        loadRef();
+      });
+    }
+  }
+
+  function update(id, patch){
+    sb.from('ref_items').update(patch).eq('id', id).then(function(res){
+      if(res.error){
+        setMsg('ref-msg', res.error.code === '23505' ? 'Nama itu sudah dipakai item lain.' : 'Gagal menyimpan: ' + res.error.message, 'error');
+        return;
+      }
+      setMsg('ref-msg', 'Tersimpan.', 'ok');
+      loadRef();
+    });
+  }
+
+  // ---------- kop ----------
+  var KOP_KEYS = ['kop_baris1', 'kop_baris2', 'kop_alamat', 'ttd_kota', 'ttd_jabatan', 'ttd_nama'];
+
+  function loadKop(){
+    sb.from('app_settings').select('key,value').then(function(res){
+      if(res.error){ setMsg('kop-msg', 'Gagal memuat: ' + res.error.message, 'error'); return; }
+      (res.data || []).forEach(function(r){
+        var el = byId('k-' + r.key);
+        if(el) el.value = r.value;
+      });
+    });
+  }
+
+  function saveKop(){
+    var btn = byId('kop-save');
+    btn.disabled = true;
+    setMsg('kop-msg', 'Menyimpan…');
+    Promise.all(KOP_KEYS.map(function(k){
+      return sb.rpc('set_setting', { p_key: k, p_value: byId('k-' + k).value.trim() });
+    })).then(function(rs){
+      btn.disabled = false;
+      var err = null;
+      rs.forEach(function(r){ if(r.error && !err) err = r.error; });
+      if(err){ setMsg('kop-msg', 'Gagal menyimpan: ' + (err.message || err.code), 'error'); return; }
+      setMsg('kop-msg', 'Tersimpan. Berlaku pada laporan berikutnya.', 'ok');
+    }).catch(function(){
+      btn.disabled = false;
+      setMsg('kop-msg', 'Gagal terhubung ke server.', 'error');
+    });
+  }
+
+  // ---------- petugas ----------
+  function loadStaff(){
+    sb.rpc('list_staff').then(function(res){
+      var body = byId('staff-body');
+      if(res.error){ body.innerHTML = '<tr><td colspan="3">Gagal memuat: ' + esc(res.error.message) + '</td></tr>'; return; }
+      var rows = res.data || [];
+      if(!rows.length){ body.innerHTML = '<tr><td colspan="3">Belum ada akun.</td></tr>'; return; }
+      body.innerHTML = rows.map(function(r){
+        var opts = [['', 'Tanpa peran'], ['satpam', 'Satpam'], ['protokol', 'Protokol'], ['admin', 'Admin']].map(function(o){
+          return '<option value="' + o[0] + '"' + ((r.role || '') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+        }).join('');
+        return '<tr><td>' + esc(r.email) + (r.user_id === S.myId ? ' <span class="chip">Anda</span>' : '') + '</td>' +
+          '<td><select data-uid="' + esc(r.user_id) + '" data-prev="' + esc(r.role || '') + '" aria-label="Peran ' + esc(r.email) + '">' + opts + '</select></td>' +
+          '<td>' + (r.last_sign_in_at ? esc(new Date(r.last_sign_in_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })) : 'Belum pernah') + '</td></tr>';
+      }).join('');
+    });
+  }
+
+  function onStaffChange(e){
+    var sel = e.target.closest('select[data-uid]');
+    if(!sel) return;
+    var prev = sel.getAttribute('data-prev');
+    var uid = sel.getAttribute('data-uid');
+    if(uid === S.myId && prev === 'admin' && sel.value !== 'admin'){
+      if(!window.confirm('Anda menurunkan peran akun Anda sendiri. Setelah ini Anda mungkin kehilangan akses ke halaman ini. Lanjutkan?')){
+        sel.value = prev; return;
+      }
+    }
+    sel.disabled = true;
+    setMsg('staff-msg', 'Menyimpan…');
+    sb.rpc('set_staff_role', { p_user_id: uid, p_role: sel.value || null }).then(function(res){
+      sel.disabled = false;
+      var row = res.data && res.data[0];
+      if(res.error || !row || row.result !== 'success'){
+        sel.value = prev;
+        setMsg('staff-msg', res.error ? 'Gagal: ' + res.error.message : (row ? row.message : 'Tidak ada respons.'), 'error');
+        return;
+      }
+      sel.setAttribute('data-prev', sel.value);
+      setMsg('staff-msg', 'Peran diperbarui.', 'ok');
+    }).catch(function(){
+      sel.disabled = false; sel.value = prev;
+      setMsg('staff-msg', 'Gagal terhubung ke server.', 'error');
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
