@@ -90,8 +90,8 @@
     <div>SIGAP<small>Sekretariat DPRD Kabupaten Solok</small></div>
   </div>
   <span class="eyebrow">Akses Staf</span>
-  <h1>Login Petugas Verifikasi</h1>
-  <p class="sub">Khusus staf/petugas keamanan yang berwenang memverifikasi kunjungan tamu.</p>
+  <h1>Login Petugas</h1>
+  <p class="sub">Khusus petugas Sekretariat yang berwenang. Halaman yang dibuka mengikuti peran akun Anda.</p>
 
   <form id="login-form">
     <div class="field">
@@ -119,9 +119,26 @@
   var statusEl = document.getElementById('login-status');
   var btn = document.getElementById('login-btn');
 
+  var HOME = { satpam: 'verifikasi.html', protokol: 'verifikasi-pendaftaran.html', admin: 'verifikasi-pendaftaran.html' };
+
+  // Arahkan sesuai peran; akun tanpa peran ditolak dengan pesan jelas.
+  function goHome(){
+    return sb.rpc('current_staff_role').then(function(r){
+      var role = r.error ? null : r.data;
+      if(role && HOME[role]){
+        window.location.href = HOME[role];
+        return;
+      }
+      statusEl.classList.add('error');
+      statusEl.textContent = 'Akun ini belum diberi peran petugas. Minta admin untuk menetapkan perannya.';
+      btn.disabled = false;
+      return sb.auth.signOut();
+    });
+  }
+
   sb.auth.getSession().then(function(res){
     if(res.data && res.data.session){
-      window.location.href = 'verifikasi.html';
+      goHome();
     }
   });
 
@@ -141,7 +158,7 @@
         statusEl.textContent = 'Email atau kata sandi salah.';
         return;
       }
-      window.location.href = 'verifikasi.html';
+      goHome();
     }).catch(function(){
       btn.disabled = false;
       statusEl.classList.add('error');

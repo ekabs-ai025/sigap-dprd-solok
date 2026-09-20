@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="staff.js"></script>
 <style>
   :root{
     --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
@@ -60,19 +61,9 @@
   .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
   .btn-ghost:hover{border-color:var(--maroon); color:var(--maroon);}
 
-  /* login */
-  #login-view{min-height:80vh; display:flex; align-items:center; justify-content:center; padding:24px;}
-  .login-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:36px; max-width:360px; width:100%; box-shadow:var(--shadow);}
-  .login-card h1{font-size:1.35rem; margin-bottom:6px;}
-  .login-card p.sub{color:var(--ink-soft); font-size:0.88rem; margin:0 0 24px;}
-  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:16px;}
-  label{font-size:0.84rem; font-weight:600;}
-  input[type="email"], input[type="password"]{
-    font-family:'Public Sans',sans-serif; font-size:0.94rem; color:var(--ink);
-    background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:11px 13px; width:100%;
-  }
-  input:focus{border-color:var(--gold);}
-  .login-err{font-size:0.82rem; color:var(--danger); min-height:1.2em; margin-bottom:8px;}
+  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right; max-width:75%;}
+  .who a{color:var(--maroon); font-weight:600; text-decoration:none; font-size:0.78rem;}
+  .who-links{line-height:1.5;}
 
   /* dashboard */
   #dash-view{display:none; max-width:1180px; margin:0 auto; padding:28px 24px 60px;}
@@ -91,7 +82,7 @@
   .stat .l{font-size:0.76rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.04em; margin-top:2px;}
 
   .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface);}
-  table{width:100%; border-collapse:collapse; font-size:0.86rem; min-width:1020px;}
+  table{width:100%; border-collapse:collapse; font-size:0.86rem; min-width:1180px;}
   th{
     text-align:left; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.7rem;
     text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint);
@@ -104,6 +95,8 @@
   .pill{display:inline-block; padding:3px 10px; border-radius:99px; font-size:0.74rem; font-weight:600;}
   .pill.menunggu{background:color-mix(in srgb, var(--gold) 18%, transparent); color:var(--gold-bright);}
   .pill.selesai{background:color-mix(in srgb, var(--ok) 20%, transparent); color:var(--ok);}
+  .pill.ditolak{background:color-mix(in srgb, var(--danger) 16%, transparent); color:var(--danger);}
+  .pill.mati{background:var(--surface-alt); color:var(--ink-faint);}
   .empty-row td{text-align:center; color:var(--ink-faint); padding:36px 14px;}
 
   .top-msg{font-size:0.84rem; color:var(--ink-soft); margin-bottom:14px;}
@@ -118,40 +111,16 @@
       <span class="mark">SG</span>
       <div><span class="name">SIGAP</span><small>Panel Admin &middot; Sekretariat DPRD Kabupaten Solok</small></div>
     </div>
-    <div class="nav-actions">
-      <a class="btn btn-ghost" href="verifikasi.html">Verifikasi Kunjungan</a>
-      <a class="btn btn-ghost" href="jadwal-ruang.html">Jadwal Ruang</a>
-      <a class="btn btn-ghost" href="index.html">Beranda SIGAP</a>
-    </div>
+    <div class="who" id="staff-who">…</div>
   </div>
 </header>
-
-<div id="login-view">
-  <div class="login-card">
-    <h1>Masuk Panel Admin</h1>
-    <p class="sub">Khusus staf Sekretariat yang berwenang melihat data pra-registrasi tamu.</p>
-    <div class="login-err" id="login-err"></div>
-    <form id="login-form">
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" required autocomplete="username">
-      </div>
-      <div class="field">
-        <label for="password">Kata Sandi</label>
-        <input type="password" id="password" required autocomplete="current-password">
-      </div>
-      <button type="submit" class="btn btn-primary" id="login-btn" style="width:100%;">Masuk</button>
-    </form>
-  </div>
-</div>
 
 <div id="dash-view">
   <div class="dash-head">
     <div>
-      <h1>Daftar Pra-Registrasi Tamu</h1>
-      <p id="who"></p>
+      <h1>Rekap Kunjungan</h1>
+      <p>Seluruh pengajuan kunjungan beserta statusnya. Untuk memproses pengajuan, buka Antrean Verifikasi.</p>
     </div>
-    <button class="btn btn-ghost" id="logout-btn">Keluar</button>
   </div>
 
   <div class="stat-row" id="stat-row"></div>
@@ -160,8 +129,12 @@
     <input type="search" id="search-box" placeholder="Cari nama, instansi, atau kode kunjungan...">
     <select id="status-filter">
       <option value="">Semua status</option>
-      <option value="menunggu-checkin">Menunggu check-in</option>
-      <option value="selesai">Selesai</option>
+      <option value="menunggu-verifikasi">Menunggu verifikasi</option>
+      <option value="menunggu-checkin">Disetujui (menunggu datang)</option>
+      <option value="selesai">Sudah check-in</option>
+      <option value="ditolak">Ditolak</option>
+      <option value="batal">Dibatalkan</option>
+      <option value="tidak-hadir">Tidak hadir</option>
     </select>
     <button class="btn btn-ghost" id="refresh-btn">Muat Ulang</button>
   </div>
@@ -176,6 +149,7 @@
           <th>Nama</th>
           <th>Instansi</th>
           <th>Ditemui</th>
+          <th>Topik</th>
           <th>Jadwal</th>
           <th>Rombongan</th>
           <th>Status</th>
@@ -184,7 +158,7 @@
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr class="empty-row"><td colspan="9">Memuat data...</td></tr>
+        <tr class="empty-row"><td colspan="10">Memuat data...</td></tr>
       </tbody>
     </table>
   </div>
@@ -192,16 +166,9 @@
 
 <script>
 (function(){
-  var SUPABASE_URL = 'https://bekpxjxxpnseizmvysyo.supabase.co';
-  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla3B4anh4cG5zZWl6bXZ5c3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMjgxNDUsImV4cCI6MjEwNDYwNDE0NX0.iiDyGIoOiUkKIyMz1lkZtOsPQSfMnFCUOnPnoTJgaIY';
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var sb = SIGAP.sb;
 
-  var loginView = document.getElementById('login-view');
   var dashView = document.getElementById('dash-view');
-  var loginForm = document.getElementById('login-form');
-  var loginBtn = document.getElementById('login-btn');
-  var loginErr = document.getElementById('login-err');
-  var whoEl = document.getElementById('who');
   var tbody = document.getElementById('table-body');
   var dataMsg = document.getElementById('data-msg');
   var statRow = document.getElementById('stat-row');
@@ -210,46 +177,9 @@
 
   var allRows = [];
 
-  function showDash(session){
-    loginView.style.display = 'none';
+  SIGAP.guard(['protokol','admin'], function(){
     dashView.style.display = 'block';
-    whoEl.textContent = 'Masuk sebagai ' + session.user.email;
     loadData();
-  }
-  function showLogin(){
-    dashView.style.display = 'none';
-    loginView.style.display = 'flex';
-  }
-
-  sb.auth.getSession().then(function(res){
-    if(res.data.session){ showDash(res.data.session); } else { showLogin(); }
-  });
-
-  loginForm.addEventListener('submit', function(e){
-    e.preventDefault();
-    loginErr.textContent = '';
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'Memeriksa...';
-    sb.auth.signInWithPassword({
-      email: document.getElementById('email').value.trim(),
-      password: document.getElementById('password').value
-    }).then(function(res){
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Masuk';
-      if(res.error){
-        loginErr.textContent = 'Email atau kata sandi salah.';
-        return;
-      }
-      showDash(res.data.session);
-    }).catch(function(){
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Masuk';
-      loginErr.textContent = 'Gagal terhubung ke server. Periksa koneksi internet.';
-    });
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', function(){
-    sb.auth.signOut().then(function(){ showLogin(); });
   });
 
   document.getElementById('refresh-btn').addEventListener('click', loadData);
@@ -259,12 +189,12 @@
   function loadData(){
     dataMsg.textContent = 'Memuat data...';
     dataMsg.classList.remove('error');
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Memuat data...</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Memuat data...</td></tr>';
     sb.from('registrations').select('*').order('created_at', {ascending:false}).then(function(res){
       if(res.error){
         dataMsg.textContent = 'Gagal memuat data: ' + res.error.message;
         dataMsg.classList.add('error');
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Gagal memuat data.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Gagal memuat data.</td></tr>';
         return;
       }
       allRows = res.data || [];
@@ -279,12 +209,16 @@
 
   function renderStats(){
     var total = allRows.length;
+    var verifikasi = allRows.filter(function(r){ return r.status === 'menunggu-verifikasi'; }).length;
     var menunggu = allRows.filter(function(r){ return r.status === 'menunggu-checkin'; }).length;
-    var todayStr = new Date().toISOString().slice(0,10);
-    var hariIni = allRows.filter(function(r){ return r.tanggal_kunjungan === todayStr; }).length;
+    var todayStr = SIGAP.todayWIB();
+    var hariIni = allRows.filter(function(r){
+      return r.tanggal_kunjungan === todayStr && (r.status === 'menunggu-checkin' || r.status === 'selesai');
+    }).length;
     statRow.innerHTML =
-      '<div class="stat"><div class="n">' + total + '</div><div class="l">Total Pra-Registrasi</div></div>' +
-      '<div class="stat"><div class="n">' + menunggu + '</div><div class="l">Menunggu Check-in</div></div>' +
+      '<div class="stat"><div class="n">' + total + '</div><div class="l">Total Pengajuan</div></div>' +
+      '<div class="stat"><div class="n">' + verifikasi + '</div><div class="l">Menunggu Verifikasi</div></div>' +
+      '<div class="stat"><div class="n">' + menunggu + '</div><div class="l">Disetujui, Belum Datang</div></div>' +
       '<div class="stat"><div class="n">' + hariIni + '</div><div class="l">Jadwal Hari Ini</div></div>';
   }
 
@@ -306,15 +240,24 @@
     });
 
     if(rows.length === 0){
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Tidak ada data yang cocok.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Tidak ada data yang cocok.</td></tr>';
       return;
     }
 
     tbody.innerHTML = rows.map(function(r){
       var pendampingCount = Array.isArray(r.pendamping) ? r.pendamping.length : 0;
       var rombongan = (r.jumlah_rombongan || 1) + ' orang' + (pendampingCount ? ' (+' + pendampingCount + ' pendamping)' : '');
-      var pillClass = r.status === 'selesai' ? 'selesai' : 'menunggu';
-      var pillLabel = r.status === 'selesai' ? 'Selesai' : 'Menunggu check-in';
+      var PILL = {
+        'menunggu-verifikasi': ['menunggu', 'Menunggu verifikasi'],
+        'menunggu-checkin': ['menunggu', 'Disetujui'],
+        'selesai': ['selesai', 'Sudah check-in'],
+        'ditolak': ['ditolak', 'Ditolak'],
+        'batal': ['mati', 'Dibatalkan'],
+        'tidak-hadir': ['mati', 'Tidak hadir']
+      };
+      var pill = PILL[r.status] || ['mati', r.status];
+      var pillClass = pill[0];
+      var pillLabel = pill[1] + (r.sumber === 'walkin' ? ' · walk-in' : '');
       var created = r.created_at ? new Date(r.created_at).toLocaleString('id-ID', {dateStyle:'medium', timeStyle:'short'}) : '';
       var checkedIn = r.checked_in_at ? new Date(r.checked_in_at).toLocaleString('id-ID', {dateStyle:'medium', timeStyle:'short'}) : '—';
       return '<tr>' +
@@ -322,6 +265,7 @@
         '<td>' + escapeHtml(r.nama) + '</td>' +
         '<td>' + escapeHtml(r.instansi) + '</td>' +
         '<td>' + escapeHtml(r.ditemui) + '</td>' +
+        '<td>' + escapeHtml(r.topik || '—') + '</td>' +
         '<td class="mono">' + escapeHtml(r.tanggal_kunjungan) + ' ' + escapeHtml((r.jam_kunjungan||'').slice(0,5)) + '</td>' +
         '<td>' + escapeHtml(rombongan) + '</td>' +
         '<td><span class="pill ' + pillClass + '">' + pillLabel + '</span></td>' +
