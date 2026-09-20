@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laporan Kunjungan · SIGAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="staff.js"></script>
+<style>
+  :root{
+    --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
+    --ink:#241712; --ink-soft:#6B584A; --ink-faint:#8C7A69;
+    --maroon:#7A1F2B; --maroon-deep:#54141C; --maroon-ink:#FBF6EC;
+    --gold:#A5761F; --gold-bright:#C98F2A; --line:#E4D5B4; --focus:#A5761F;
+    --danger:#B3261E; --ok:#2E7D32; --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+      --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+      --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+      --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+      --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+    --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+    --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+    --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+    --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces', Georgia, serif; font-weight:650; color:var(--ink); margin:0;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px;}
+  header{border-bottom:1px solid var(--line); background:var(--bg);}
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:1080px; margin:0 auto; gap:12px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
+  .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
+  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right; max-width:75%;}
+  .who a{color:var(--maroon); font-weight:600; text-decoration:none; font-size:0.78rem;}
+  .who-links{line-height:1.5;}
+
+  main{padding:32px 0 64px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--maroon); font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:12px;
+  }
+  .eyebrow::before{content:""; width:16px; height:2px; background:var(--gold); display:inline-block;}
+  h1.page-title{font-size:clamp(1.4rem,4vw,1.9rem); margin-bottom:6px;}
+  .page-sub{color:var(--ink-soft); font-size:0.94rem; margin:0 0 22px; max-width:64ch;}
+
+  .tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+  .tab{
+    padding:9px 16px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+    font:inherit; font-weight:600; font-size:0.86rem; cursor:pointer; color:var(--ink-soft);
+  }
+  .tab.active{background:var(--maroon); color:var(--maroon-ink); border-color:var(--maroon);}
+
+  .controls{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px;
+    display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:22px; box-shadow:var(--shadow);
+  }
+  .field{display:flex; flex-direction:column; gap:5px;}
+  label{font-size:0.78rem; font-weight:600; color:var(--ink-soft);}
+  input[type="date"], select{
+    font-family:'Public Sans',sans-serif; font-size:0.9rem; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:9px 11px;
+  }
+  input:focus, select:focus{border-color:var(--gold);}
+  .spacer{flex:1;}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 18px;
+    border-radius:9px; font-weight:600; font-size:0.88rem; border:1px solid transparent; cursor:pointer;
+    transition:background .15s ease; font-family:inherit;
+  }
+  .btn-primary{background:var(--maroon); color:var(--maroon-ink);}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--maroon); color:var(--maroon);}
+
+  .msg{font-size:0.88rem; color:var(--ink-soft); margin:0 0 14px; min-height:1.3em;}
+  .msg.error{color:var(--danger);}
+
+  .report{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:26px 28px; box-shadow:var(--shadow);}
+  .rep-kop{text-align:center; border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:16px;}
+  .rep-kop .k1{font-weight:600; font-size:0.95rem; letter-spacing:0.02em;}
+  .rep-kop .k2{font-family:'Fraunces',serif; font-weight:650; font-size:1.25rem;}
+  .rep-kop .k3{font-size:0.78rem; color:var(--ink-soft);}
+  .rep-title{text-align:center; margin-bottom:4px; font-size:1.15rem;}
+  .rep-period{text-align:center; color:var(--ink-soft); font-size:0.88rem; margin-bottom:22px;}
+  .rep-sec{margin-bottom:24px;}
+  .rep-sec h3{font-size:0.98rem; margin-bottom:8px;}
+  .rep-note{font-size:0.8rem; color:var(--ink-faint); margin:6px 0 0;}
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px;}
+  table{width:100%; border-collapse:collapse; font-size:0.84rem;}
+  th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.68rem;
+    text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint);
+    padding:9px 12px; border-bottom:1px solid var(--line); background:var(--surface-alt); white-space:nowrap;
+  }
+  td{padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  td.empty{text-align:center; color:var(--ink-faint); padding:22px;}
+  .rep-ttd{margin:34px 0 0 auto; width:min(280px, 100%); text-align:center; font-size:0.9rem;}
+  .rep-ttd .space{height:64px;}
+  .rep-ttd .nm{font-weight:600; text-decoration:underline;}
+  .rep-foot{margin-top:22px; font-size:0.76rem; color:var(--ink-faint);}
+
+  footer{padding:24px 0; border-top:1px solid var(--line); text-align:center;}
+  footer p{font-size:0.8rem; color:var(--ink-faint); margin:0;}
+  @media print{ header, .tabs, .controls, .msg, footer{display:none !important;} .report{border:none; box-shadow:none; padding:0;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span class="mark">SG</span>
+      <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
+    </div>
+    <div class="who" id="staff-who">…</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <span class="eyebrow">Laporan</span>
+    <h1 class="page-title">Laporan kunjungan tamu</h1>
+    <p class="page-sub">Pilih jenis laporan dan periodenya, tampilkan, lalu ekspor ke PDF atau Excel dengan kop Sekretariat.</p>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-tab="harian">Harian</button>
+      <button type="button" class="tab" data-tab="periode">Bulanan / periode</button>
+      <button type="button" class="tab" data-tab="konsumsi">Konsumsi &amp; ruang</button>
+    </div>
+
+    <div class="controls">
+      <div class="field" id="ctl-harian">
+        <label for="c-tanggal">Tanggal</label>
+        <input type="date" id="c-tanggal">
+      </div>
+      <div class="field" id="ctl-preset" style="display:none;">
+        <label for="c-preset">Periode</label>
+        <select id="c-preset">
+          <option value="bulan-ini">Bulan ini</option>
+          <option value="bulan-lalu">Bulan lalu</option>
+          <option value="7">7 hari terakhir</option>
+          <option value="30">30 hari terakhir</option>
+          <option value="kustom">Kustom</option>
+        </select>
+      </div>
+      <div class="field" id="ctl-dari" style="display:none;"><label for="c-dari">Dari</label><input type="date" id="c-dari"></div>
+      <div class="field" id="ctl-sampai" style="display:none;"><label for="c-sampai">Sampai</label><input type="date" id="c-sampai"></div>
+      <button type="button" class="btn btn-primary" id="c-run">Tampilkan</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-ghost" id="x-pdf" disabled>Ekspor PDF</button>
+      <button type="button" class="btn btn-ghost" id="x-xls" disabled>Ekspor Excel</button>
+    </div>
+
+    <p class="msg" id="msg" role="status"></p>
+    <div id="out"></div>
+  </div>
+</main>
+
+<footer>
+  <p>SIGAP — Sistem Informasi Gerbang Antrian Pengunjung · Sekretariat DPRD Kabupaten Solok</p>
+</footer>
+
+<script>
+(function(){
+  var sb = SIGAP.sb;
+  var esc = SIGAP.esc;
+
+  var S = { tab: 'harian', report: null, cfg: {}, email: '', role: null };
+
+  function byId(id){ return document.getElementById(id); }
+
+  SIGAP.guard(['protokol','admin'], function(ctx){
+    S.email = ctx.user.email;
+    S.role = ctx.role;
+    init();
+  });
+
+  // ---------- tanggal (WIB, tanpa efek zona perangkat) ----------
+  function addDays(iso, n){
+    var d = new Date(iso + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  function monthStart(iso){ return iso.slice(0, 8) + '01'; }
+  function prevMonth(iso){
+    var d = new Date(iso.slice(0, 8) + '01T00:00:00Z');
+    d.setUTCMonth(d.getUTCMonth() - 1);
+    var start = d.toISOString().slice(0, 10);
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    d.setUTCDate(0);
+    return { dari: start, sampai: d.toISOString().slice(0, 10) };
+  }
+  function rentang(preset){
+    var t = SIGAP.todayWIB();
+    if(preset === 'bulan-ini') return { dari: monthStart(t), sampai: t };
+    if(preset === 'bulan-lalu') return prevMonth(t);
+    var n = parseInt(preset, 10);
+    if(n) return { dari: addDays(t, -(n - 1)), sampai: t };
+    return null;
+  }
+
+  function init(){
+    byId('c-tanggal').value = SIGAP.todayWIB();
+    applyPreset();
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){
+      b.addEventListener('click', function(){ setTab(b.getAttribute('data-tab')); });
+    });
+    byId('c-preset').addEventListener('change', applyPreset);
+    ['c-dari', 'c-sampai'].forEach(function(id){
+      byId(id).addEventListener('change', function(){ byId('c-preset').value = 'kustom'; });
+    });
+    byId('c-run').addEventListener('click', run);
+    byId('x-pdf').addEventListener('click', exportPdf);
+    byId('x-xls').addEventListener('click', exportXls);
+    sb.from('app_settings').select('key,value').then(function(res){
+      (res.data || []).forEach(function(r){ S.cfg[r.key] = r.value; });
+    });
+    run();
+  }
+
+  function applyPreset(){
+    var r = rentang(byId('c-preset').value);
+    if(r){ byId('c-dari').value = r.dari; byId('c-sampai').value = r.sampai; }
+  }
+
+  function setTab(t){
+    S.tab = t;
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab') === t);
+    });
+    var harian = t === 'harian';
+    byId('ctl-harian').style.display = harian ? '' : 'none';
+    byId('ctl-preset').style.display = harian ? 'none' : '';
+    byId('ctl-dari').style.display = harian ? 'none' : '';
+    byId('ctl-sampai').style.display = harian ? 'none' : '';
+    S.report = null;
+    byId('out').innerHTML = '';
+    byId('x-pdf').disabled = true;
+    byId('x-xls').disabled = true;
+    setMsg('');
+    run();
+  }
+
+  function setMsg(text, kind){
+    var el = byId('msg');
+    el.textContent = text || '';
+    el.className = 'msg' + (kind ? ' ' + kind : '');
+  }
+
+  // ---------- pembantu data ----------
+  function kelompok(r){
+    var today = SIGAP.todayWIB();
+    if(r.status === 'tidak-hadir' || (r.status === 'menunggu-checkin' && r.tanggal_kunjungan < today)) return 'Tidak hadir';
+    if(r.status === 'selesai') return 'Hadir';
+    if(r.status === 'menunggu-checkin') return 'Terjadwal';
+    if(r.status === 'menunggu-verifikasi') return 'Menunggu verifikasi';
+    if(r.status === 'ditolak') return 'Ditolak';
+    return 'Dibatalkan';
+  }
+
+  function konsumsiText(k){
+    if(!k || !k.length) return '';
+    return k.map(function(x){ return x.jenis + ' x' + x.jumlah; }).join(', ');
+  }
+
+  function num(n){ return Number(n || 0); }
+
+  function fetchAll(dari, sampai){
+    var all = [];
+    function page(from){
+      return sb.from('registrations').select('*')
+        .gte('tanggal_kunjungan', dari).lte('tanggal_kunjungan', sampai)
+        .order('tanggal_kunjungan', { ascending: true }).order('jam_kunjungan', { ascending: true })
+        .range(from, from + 999).then(function(res){
+          if(res.error) throw new Error(res.error.message || res.error.code);
+          all = all.concat(res.data || []);
+          if((res.data || []).length === 1000) return page(from + 1000);
+          return all;
+        });
+    }
+    return page(0);
+  }
+
+  function pct(a, b){ return b > 0 ? (Math.round(a * 1000 / b) / 10).toString().replace('.', ',') + '%' : '-'; }
+
+  // ---------- penyusun laporan: satu struktur untuk layar, PDF, dan Excel ----------
+  function buildHarian(tanggal){
+    return fetchAll(tanggal, tanggal).then(function(rows){
+      var hadir = 0, terjadwal = 0, tidak = 0, verif = 0, tolak = 0, batal = 0, orang = 0;
+      rows.forEach(function(r){
+        var k = kelompok(r);
+        if(k === 'Hadir'){ hadir++; orang += num(r.jumlah_rombongan); }
+        else if(k === 'Terjadwal') terjadwal++;
+        else if(k === 'Tidak hadir') tidak++;
+        else if(k === 'Menunggu verifikasi') verif++;
+        else if(k === 'Ditolak') tolak++;
+        else batal++;
+      });
+      return {
+        judul: 'Laporan Kunjungan Harian',
+        periode: 'Hari ' + SIGAP.tgl(tanggal),
+        file: 'laporan-harian-' + tanggal,
+        landscape: true,
+        sections: [
+          { title: 'Ringkasan', head: ['Keterangan', 'Jumlah'], numCols: [1], rows: [
+            ['Total pengajuan', rows.length], ['Hadir (sudah check-in)', hadir], ['Terjadwal (belum datang)', terjadwal],
+            ['Tidak hadir', tidak], ['Menunggu verifikasi', verif], ['Ditolak', tolak], ['Dibatalkan', batal],
+            ['Jumlah orang hadir', orang]
+          ] },
+          { title: 'Daftar tamu', head: ['No', 'Jam', 'Nama', 'Instansi', 'Ditemui', 'Topik', 'Orang', 'Konsumsi', 'Status', 'Check-in'], numCols: [0, 6],
+            rows: rows.map(function(r, i){
+              return [i + 1, SIGAP.jam(r.jam_kunjungan), r.nama, r.instansi, r.ditemui, r.topik || '-', num(r.jumlah_rombongan),
+                konsumsiText(r.konsumsi) || '-', kelompok(r) + (r.sumber === 'walkin' ? ' (walk-in)' : ''),
+                r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }).replace('.', ':') : '-'];
+            }),
+            empty: 'Tidak ada kunjungan pada tanggal ini.' }
+        ]
+      };
+    });
+  }
+
+  function rpcRingkasan(dari, sampai){
+    return sb.rpc('laporan_ringkasan', { p_dari: dari, p_sampai: sampai }).then(function(res){
+      if(res.error) throw new Error(res.error.message || res.error.code);
+      return res.data;
+    });
+  }
+
+  function buildPeriode(dari, sampai){
+    return rpcRingkasan(dari, sampai).then(function(d){
+      var due = num(d.hadir) + num(d.tidak_hadir);
+      var grouped = function(arr){ return (arr || []).map(function(x){ return [x.nama, num(x.total)]; }); };
+      return {
+        judul: 'Laporan Kunjungan Periode',
+        periode: SIGAP.tgl(dari) + ' s.d. ' + SIGAP.tgl(sampai),
+        file: 'laporan-periode-' + dari + '_' + sampai,
+        landscape: false,
+        rincian: { dari: dari, sampai: sampai },
+        sections: [
+          { title: 'Ringkasan', head: ['Keterangan', 'Jumlah'], numCols: [1], rows: [
+            ['Total pengajuan', num(d.total)], ['Hadir (sudah check-in)', num(d.hadir)], ['Terjadwal (belum datang)', num(d.terjadwal)],
+            ['Tidak hadir', num(d.tidak_hadir)], ['Menunggu verifikasi', num(d.menunggu_verifikasi)], ['Ditolak', num(d.ditolak)],
+            ['Dibatalkan', num(d.batal)], ['Tamu walk-in', num(d.walkin)], ['Jumlah orang hadir', num(d.orang_hadir)],
+            ['Tingkat kehadiran (hadir / seharusnya hadir)', pct(num(d.hadir), due)]
+          ] },
+          { title: 'Kunjungan per hari', head: ['Tanggal', 'Pengajuan', 'Hadir'], numCols: [1, 2],
+            rows: (d.per_hari || []).map(function(x){ return [SIGAP.tgl(x.tanggal), num(x.total), num(x.hadir)]; }), empty: 'Tidak ada data.' },
+          { title: 'Per instansi (kunjungan terlaksana, 15 teratas)', head: ['Instansi', 'Kunjungan'], numCols: [1], rows: grouped(d.per_instansi), empty: 'Belum ada kunjungan terlaksana.' },
+          { title: 'Per pejabat / unit yang ditemui (kunjungan terlaksana)', head: ['Ditemui', 'Kunjungan'], numCols: [1], rows: grouped(d.per_ditemui), empty: 'Belum ada kunjungan terlaksana.' },
+          { title: 'Per topik konsultasi (kunjungan terlaksana)', head: ['Topik', 'Kunjungan'], numCols: [1], rows: grouped(d.per_topik), empty: 'Belum ada kunjungan terlaksana.' }
+        ]
+      };
+    });
+  }
+
+  function buildKonsumsi(dari, sampai){
+    return rpcRingkasan(dari, sampai).then(function(d){
+      var k = function(arr){ return (arr || []).map(function(x){ return [x.jenis, num(x.jumlah)]; }); };
+      return {
+        judul: 'Rekap Konsumsi dan Pemakaian Ruang',
+        periode: SIGAP.tgl(dari) + ' s.d. ' + SIGAP.tgl(sampai),
+        file: 'rekap-konsumsi-ruang-' + dari + '_' + sampai,
+        landscape: false,
+        sections: [
+          { title: 'Konsumsi yang disiapkan (kunjungan hadir, terjadwal, dan tidak hadir)', head: ['Jenis konsumsi', 'Jumlah'], numCols: [1], rows: k(d.konsumsi_disiapkan), empty: 'Tidak ada konsumsi tercatat.' },
+          { title: 'Konsumsi terpakai (hanya tamu yang hadir)', head: ['Jenis konsumsi', 'Jumlah'], numCols: [1], rows: k(d.konsumsi_terpakai), empty: 'Tidak ada konsumsi tercatat.' },
+          { title: 'Pemakaian ruang', head: ['Ruang', 'Jumlah pemakaian', 'Total jam'], numCols: [1, 2],
+            rows: (d.ruang || []).map(function(x){ return [x.nama, num(x.pemakaian), String(num(x.jam)).replace('.', ',')]; }), empty: 'Tidak ada pemakaian ruang tercatat.' }
+        ]
+      };
+    });
+  }
+
+  function run(){
+    var btn = byId('c-run');
+    btn.disabled = true;
+    setMsg('Menyusun laporan…');
+    byId('x-pdf').disabled = true;
+    byId('x-xls').disabled = true;
+    var p;
+    try{
+      if(S.tab === 'harian'){
+        var tgl = byId('c-tanggal').value;
+        if(!tgl) throw new Error('Pilih tanggal laporan.');
+        p = buildHarian(tgl);
+      }else{
+        var dari = byId('c-dari').value, sampai = byId('c-sampai').value;
+        if(!dari || !sampai) throw new Error('Isi tanggal awal dan akhir.');
+        if(sampai < dari) throw new Error('Tanggal akhir tidak boleh sebelum tanggal awal.');
+        if((new Date(sampai) - new Date(dari)) / 86400000 > 400) throw new Error('Periode maksimal 400 hari.');
+        p = S.tab === 'periode' ? buildPeriode(dari, sampai) : buildKonsumsi(dari, sampai);
+      }
+    }catch(e){
+      btn.disabled = false;
+      setMsg(e.message, 'error');
+      return;
+    }
+    var tab = S.tab;
+    p.then(function(rep){
+      btn.disabled = false;
+      if(tab !== S.tab) return;
+      S.report = rep;
+      setMsg('');
+      render(rep);
+      byId('x-pdf').disabled = false;
+      byId('x-xls').disabled = false;
+    }).catch(function(err){
+      btn.disabled = false;
+      setMsg('Gagal menyusun laporan: ' + (err && err.message ? err.message : err), 'error');
+    });
+  }
+
+  // ---------- tampilan ----------
+  function cfgLine(k, dflt){ return S.cfg[k] !== undefined && S.cfg[k] !== '' ? S.cfg[k] : dflt; }
+
+  function render(rep){
+    var h = '<div class="report">' +
+      '<div class="rep-kop"><div class="k1">' + esc(cfgLine('kop_baris1', '')) + '</div><div class="k2">' + esc(cfgLine('kop_baris2', '')) + '</div><div class="k3">' + esc(cfgLine('kop_alamat', '')) + '</div></div>' +
+      '<h2 class="rep-title">' + esc(rep.judul) + '</h2><div class="rep-period">' + esc(rep.periode) + '</div>';
+    rep.sections.forEach(function(sec){
+      var isNum = function(i){ return (sec.numCols || []).indexOf(i) >= 0; };
+      h += '<section class="rep-sec"><h3>' + esc(sec.title) + '</h3><div class="table-wrap"><table><thead><tr>' +
+        sec.head.map(function(c, i){ return '<th' + (isNum(i) ? ' class="num"' : '') + '>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+      if(!sec.rows.length){
+        h += '<tr><td class="empty" colspan="' + sec.head.length + '">' + esc(sec.empty || 'Tidak ada data.') + '</td></tr>';
+      }else{
+        h += sec.rows.map(function(r){
+          return '<tr>' + r.map(function(c, i){ return '<td' + (isNum(i) ? ' class="num"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>';
+        }).join('');
+      }
+      h += '</tbody></table></div></section>';
+    });
+    h += '<div class="rep-ttd"><div>' + esc(cfgLine('ttd_kota', '')) + ', ' + esc(SIGAP.tgl(SIGAP.todayWIB())) + '</div>' +
+      '<div>' + esc(cfgLine('ttd_jabatan', '(Jabatan penandatangan)')) + '</div><div class="space"></div>' +
+      '<div class="nm">' + esc(cfgLine('ttd_nama', '(Nama penandatangan)')) + '</div></div>' +
+      '<div class="rep-foot">Dicetak oleh ' + esc(S.email) + ' pada ' + esc(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })) + ' WIB</div></div>';
+    byId('out').innerHTML = h;
+  }
+
+  // ---------- ekspor ----------
+  function exportPdf(){
+    var rep = S.report;
+    if(!rep) return;
+    if(!window.jspdf || !window.jspdf.jsPDF){ setMsg('Pustaka PDF belum termuat. Periksa koneksi internet lalu muat ulang halaman.', 'error'); return; }
+    var doc = new window.jspdf.jsPDF({ orientation: rep.landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    if(typeof doc.autoTable !== 'function'){ setMsg('Pustaka tabel PDF belum termuat. Muat ulang halaman.', 'error'); return; }
+    var W = doc.internal.pageSize.getWidth();
+    var H = doc.internal.pageSize.getHeight();
+    var M = 14;
+    var y = 14;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text(cfgLine('kop_baris1', ''), W / 2, y, { align: 'center' }); y += 6;
+    doc.setFontSize(15);
+    doc.text(cfgLine('kop_baris2', ''), W / 2, y, { align: 'center' }); y += 5.5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text(cfgLine('kop_alamat', ''), W / 2, y, { align: 'center' }); y += 3;
+    doc.setLineWidth(0.7); doc.line(M, y, W - M, y);
+    doc.setLineWidth(0.2); doc.line(M, y + 1.2, W - M, y + 1.2);
+    y += 9;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text(rep.judul.toUpperCase(), W / 2, y, { align: 'center' }); y += 5.5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text(rep.periode, W / 2, y, { align: 'center' }); y += 8;
+
+    rep.sections.forEach(function(sec){
+      if(y > H - 40){ doc.addPage(); y = 16; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      doc.text(sec.title, M, y); y += 2;
+      var colStyles = {};
+      (sec.numCols || []).forEach(function(i){ colStyles[i] = { halign: 'right' }; });
+      doc.autoTable({
+        startY: y, margin: { left: M, right: M },
+        head: [sec.head],
+        body: sec.rows.length ? sec.rows.map(function(r){ return r.map(String); }) : [[{ content: sec.empty || 'Tidak ada data.', colSpan: sec.head.length, styles: { halign: 'center', textColor: 120 } }]],
+        styles: { fontSize: 8, cellPadding: 1.8, lineColor: [200, 190, 165], lineWidth: 0.1 },
+        headStyles: { fillColor: [122, 31, 43], textColor: 255, fontStyle: 'bold' },
+        columnStyles: colStyles
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    });
+
+    if(y > H - 55){ doc.addPage(); y = 20; }
+    var x = W - M - 60;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text(cfgLine('ttd_kota', '') + ', ' + SIGAP.tgl(SIGAP.todayWIB()), x + 30, y, { align: 'center' }); y += 5;
+    doc.text(cfgLine('ttd_jabatan', '(Jabatan penandatangan)'), x + 30, y, { align: 'center' }); y += 24;
+    doc.setFont('helvetica', 'bold');
+    var nm = cfgLine('ttd_nama', '(Nama penandatangan)');
+    doc.text(nm, x + 30, y, { align: 'center' });
+    doc.setLineWidth(0.2); doc.line(x + 30 - doc.getTextWidth(nm) / 2, y + 1, x + 30 + doc.getTextWidth(nm) / 2, y + 1);
+
+    var pages = doc.getNumberOfPages();
+    for(var i = 1; i <= pages; i++){
+      doc.setPage(i);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+      doc.text('Dicetak oleh ' + S.email + ' · ' + new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB', M, H - 7);
+      doc.text('Halaman ' + i + ' dari ' + pages, W - M, H - 7, { align: 'right' });
+    }
+    doc.save(rep.file + '.pdf');
+  }
+
+  function sheetName(t, used){
+    var base = t.replace(/[\\\/\?\*\[\]:]/g, ' ').replace(/\s+/g, ' ').slice(0, 28).trim() || 'Data';
+    var n = base, i = 2;
+    while(used.indexOf(n) >= 0){ n = base.slice(0, 26) + ' ' + i; i++; }
+    used.push(n);
+    return n;
+  }
+
+  function exportXls(){
+    var rep = S.report;
+    if(!rep) return;
+    if(typeof XLSX === 'undefined'){ setMsg('Pustaka Excel belum termuat. Periksa koneksi internet lalu muat ulang halaman.', 'error'); return; }
+    var btn = byId('x-xls');
+    btn.disabled = true;
+
+    var pRincian = rep.rincian ? fetchAll(rep.rincian.dari, rep.rincian.sampai) : Promise.resolve(null);
+    pRincian.then(function(rincian){
+      var sections = rep.sections.slice();
+      if(rincian){
+        sections.push({
+          title: 'Rincian kunjungan',
+          head: ['No', 'Tanggal', 'Jam', 'Kode', 'Nama', 'Instansi', 'Ditemui', 'Topik', 'Orang', 'Konsumsi', 'Status', 'Sumber'],
+          rows: rincian.map(function(r, i){
+            return [i + 1, r.tanggal_kunjungan, SIGAP.jam(r.jam_kunjungan), r.kode_kunjungan, r.nama, r.instansi, r.ditemui, r.topik || '-',
+              num(r.jumlah_rombongan), konsumsiText(r.konsumsi) || '-', kelompok(r), r.sumber === 'walkin' ? 'Walk-in' : 'Online'];
+          })
+        });
+      }
+      var wb = XLSX.utils.book_new();
+      var used = [];
+      var kop = [[cfgLine('kop_baris1', '')], [cfgLine('kop_baris2', '')], [cfgLine('kop_alamat', '')], [], [rep.judul], [rep.periode], []];
+      sections.forEach(function(sec){
+        var aoa = kop.concat([[sec.title], sec.head], sec.rows.length ? sec.rows : [[sec.empty || 'Tidak ada data.']]);
+        var ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = sec.head.map(function(h, i){
+          var w = String(h).length;
+          sec.rows.slice(0, 200).forEach(function(r){ w = Math.max(w, String(r[i] == null ? '' : r[i]).length); });
+          return { wch: Math.min(Math.max(w + 2, 8), 46) };
+        });
+        XLSX.utils.book_append_sheet(wb, ws, sheetName(sec.title, used));
+      });
+      XLSX.writeFile(wb, rep.file + '.xlsx');
+    }).catch(function(err){
+      setMsg('Gagal membuat Excel: ' + (err && err.message ? err.message : err), 'error');
+    }).then(function(){ btn.disabled = false; });
+  }
+})();
+</script>
+
+</body>
+</html>
