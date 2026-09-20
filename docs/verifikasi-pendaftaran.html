@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antrean Verifikasi · SIGAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="staff.js"></script>
+<style>
+  :root{
+    --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
+    --ink:#241712; --ink-soft:#6B584A; --ink-faint:#8C7A69;
+    --maroon:#7A1F2B; --maroon-deep:#54141C; --maroon-ink:#FBF6EC;
+    --gold:#A5761F; --gold-bright:#C98F2A; --line:#E4D5B4; --focus:#A5761F;
+    --danger:#B3261E; --ok:#2E7D32; --shadow: 0 1px 2px rgba(36,23,18,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+      --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+      --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+      --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+      --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1210; --surface:#251A15; --surface-alt:#2E2018;
+    --ink:#F4EADA; --ink-soft:#C7B29A; --ink-faint:#9C876F;
+    --maroon:#C4404E; --maroon-deep:#8E2732; --maroon-ink:#1B1210;
+    --gold:#D9A64C; --gold-bright:#ECC373; --line:#43312A; --focus:#D9A64C;
+    --danger:#E5837C; --ok:#7FCC85; --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces', Georgia, serif; font-weight:650; color:var(--ink); margin:0;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px;}
+  header{border-bottom:1px solid var(--line); background:var(--bg);}
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:980px; margin:0 auto; gap:12px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
+  .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
+  .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
+  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right; max-width:75%;}
+  .who a{color:var(--maroon); font-weight:600; text-decoration:none; font-size:0.78rem;}
+  .who-links{line-height:1.5;}
+
+  main{padding:32px 0 64px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--maroon); font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:12px;
+  }
+  .eyebrow::before{content:""; width:16px; height:2px; background:var(--gold); display:inline-block;}
+  h1.page-title{font-size:clamp(1.4rem,4vw,1.9rem); margin-bottom:6px;}
+  .page-sub{color:var(--ink-soft); font-size:0.94rem; margin:0 0 22px; max-width:64ch;}
+
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
+  .tabs{display:flex; gap:8px; flex-wrap:wrap; flex:1;}
+  .tab{
+    padding:9px 14px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+    font-weight:600; font-size:0.86rem; cursor:pointer; color:var(--ink-soft); font:inherit; font-weight:600; font-size:0.86rem;
+  }
+  .tab.active{background:var(--maroon); color:var(--maroon-ink); border-color:var(--maroon);}
+  .tab .n{font-family:'IBM Plex Mono',monospace; margin-left:6px; opacity:0.85;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 18px;
+    border-radius:9px; font-weight:600; font-size:0.88rem; border:1px solid transparent; cursor:pointer;
+    transition:background .15s ease; font-family:inherit; text-decoration:none;
+  }
+  .btn-primary{background:var(--maroon); color:var(--maroon-ink);}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--maroon); color:var(--maroon);}
+  .btn-danger{background:transparent; border-color:var(--danger); color:var(--danger);}
+  .btn-danger:hover{background:color-mix(in srgb, var(--danger) 10%, transparent);}
+  .btn-sm{padding:7px 12px; font-size:0.8rem;}
+
+  .list{display:flex; flex-direction:column; gap:14px;}
+  .empty{color:var(--ink-faint); text-align:center; padding:40px 0; border:1px dashed var(--line); border-radius:14px;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow);}
+  .card-top{display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:12px;}
+  .card-top h3{font-size:1.08rem;}
+  .card-top .sub{font-size:0.86rem; color:var(--ink-soft);}
+  .chip{
+    font-family:'IBM Plex Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.04em;
+    padding:3px 8px; border-radius:5px; font-weight:600; flex-shrink:0; white-space:nowrap;
+    background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold);
+  }
+  .chip.ok{background:color-mix(in srgb, var(--ok) 16%, transparent); color:var(--ok);}
+  .chip.bad{background:color-mix(in srgb, var(--danger) 14%, transparent); color:var(--danger);}
+  .chip.mute{background:var(--surface-alt); color:var(--ink-faint);}
+  .chip.walkin{background:color-mix(in srgb, var(--maroon) 12%, transparent); color:var(--maroon); margin-left:6px;}
+  dl.facts{display:grid; grid-template-columns:repeat(2,1fr); gap:8px 24px; margin:0 0 14px;}
+  @media (max-width:640px){ dl.facts{grid-template-columns:1fr;} }
+  dl.facts .f{display:flex; gap:10px; font-size:0.86rem;}
+  dl.facts .f.full{grid-column:1 / -1;}
+  dl.facts dt{color:var(--ink-faint); flex-shrink:0; width:84px;}
+  dl.facts dd{margin:0; font-weight:500; min-width:0; overflow-wrap:anywhere;}
+  .note{font-size:0.82rem; color:var(--ink-soft); background:var(--surface-alt); border-radius:9px; padding:8px 12px; margin-bottom:12px;}
+  .note.warn{border-left:3px solid var(--gold);}
+  .note.bad{border-left:3px solid var(--danger);}
+  .actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+  /* dialog */
+  dialog{
+    border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--ink);
+    padding:0; width:min(640px, calc(100vw - 24px)); max-height:calc(100vh - 32px); box-shadow:0 30px 60px -20px rgba(0,0,0,0.45);
+  }
+  dialog::backdrop{background:rgba(20,10,8,0.55);}
+  .dlg{padding:22px 24px 20px; overflow:auto; max-height:calc(100vh - 34px);}
+  .dlg h2{font-size:1.15rem; margin-bottom:4px;}
+  .dlg .sub{font-size:0.86rem; color:var(--ink-soft); margin-bottom:16px;}
+  .seg{display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap;}
+  .seg button{
+    flex:1 1 auto; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:var(--bg);
+    font:inherit; font-weight:600; font-size:0.84rem; cursor:pointer; color:var(--ink-soft);
+  }
+  .seg button.on{background:var(--maroon); border-color:var(--maroon); color:var(--maroon-ink);}
+  .seg button:disabled{opacity:0.45; cursor:not-allowed;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px 14px;}
+  @media (max-width:560px){ .grid2{grid-template-columns:1fr;} }
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+  .grid2 .field{margin-bottom:0;}
+  .field.full{grid-column:1 / -1;}
+  label{font-size:0.82rem; font-weight:600;}
+  label .opt{font-weight:400; color:var(--ink-faint); font-size:0.76rem;}
+  input[type="text"], input[type="tel"], input[type="email"], input[type="date"], input[type="time"], input[type="number"], select, textarea{
+    font-family:'Public Sans',sans-serif; font-size:0.92rem; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:9px 11px; width:100%;
+  }
+  textarea{resize:vertical; min-height:60px;}
+  input:focus, select:focus, textarea:focus{border-color:var(--gold);}
+  .sect{border-top:1px solid var(--line); padding-top:14px; margin-top:6px;}
+  .sect h4{font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--gold); margin:0 0 10px; font-weight:600;}
+  .krow{display:grid; grid-template-columns:1fr 90px auto; gap:8px; margin-bottom:8px; align-items:center;}
+  .hint{font-size:0.78rem; color:var(--ink-faint); margin:4px 0 0;}
+  .dlg-msg{font-size:0.86rem; min-height:1.3em; margin:12px 0 0;}
+  .dlg-msg.error{color:var(--danger);}
+  .dlg-msg.okmsg{color:var(--ok);}
+  .dlg-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap;}
+  .hidden{display:none !important;}
+  footer{padding:24px 0; border-top:1px solid var(--line); text-align:center;}
+  footer p{font-size:0.8rem; color:var(--ink-faint); margin:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span class="mark">SG</span>
+      <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
+    </div>
+    <div class="who" id="staff-who">…</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <span class="eyebrow">Antrean Verifikasi</span>
+    <h1 class="page-title">Verifikasi pengajuan kunjungan</h1>
+    <p class="page-sub">Periksa pengajuan tamu, tetapkan ruang dan konsumsi, lalu setujui, tolak, atau ubah jadwalnya. Tiket QR hanya terbit setelah disetujui.</p>
+
+    <div class="toolbar">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="pending">Menunggu verifikasi<span class="n" id="n-pending"></span></button>
+        <button type="button" class="tab" data-tab="approved">Disetujui<span class="n" id="n-approved"></span></button>
+        <button type="button" class="tab" data-tab="riwayat">Riwayat</button>
+      </div>
+      <button type="button" class="btn btn-ghost" id="reload-btn">Muat ulang</button>
+      <button type="button" class="btn btn-primary" id="walkin-btn">+ Tamu walk-in</button>
+    </div>
+
+    <div class="list" id="list"><div class="empty">Memuat…</div></div>
+  </div>
+</main>
+
+<footer>
+  <p>SIGAP — Sistem Informasi Gerbang Antrian Pengunjung · Sekretariat DPRD Kabupaten Solok</p>
+</footer>
+
+<!-- Dialog: proses pengajuan -->
+<dialog id="dlg-proses">
+  <div class="dlg">
+    <h2 id="p-title">Proses pengajuan</h2>
+    <p class="sub" id="p-sub"></p>
+    <div class="seg" id="p-seg">
+      <button type="button" data-aksi="setujui" class="on">Setujui</button>
+      <button type="button" data-aksi="jadwal_ulang">Ubah jadwal &amp; setujui</button>
+      <button type="button" data-aksi="tolak">Tolak</button>
+    </div>
+
+    <div id="p-tolak" class="hidden">
+      <div class="field">
+        <label for="p-alasan-sel">Alasan penolakan <span class="opt">(wajib)</span></label>
+        <select id="p-alasan-sel"></select>
+      </div>
+      <div class="field hidden" id="p-alasan-lain-wrap">
+        <label for="p-alasan-lain">Tuliskan alasan</label>
+        <input type="text" id="p-alasan-lain" maxlength="200">
+      </div>
+    </div>
+
+    <div id="p-jadwal" class="hidden">
+      <div class="grid2" style="margin-bottom:12px;">
+        <div class="field"><label for="p-tgl">Tanggal baru</label><input type="date" id="p-tgl"></div>
+        <div class="field"><label for="p-jam">Jam baru</label><input type="time" id="p-jam"></div>
+      </div>
+      <div class="field">
+        <label for="p-alasan-jadwal">Alasan perubahan jadwal <span class="opt">(wajib, terlihat oleh tamu)</span></label>
+        <input type="text" id="p-alasan-jadwal" maxlength="200" placeholder="mis. Pejabat ada rapat pada jadwal semula">
+      </div>
+    </div>
+
+    <div id="p-siap">
+      <div class="sect">
+        <h4>Ruang</h4>
+        <div class="grid2">
+          <div class="field"><label for="p-ruang">Ruang</label><select id="p-ruang"></select></div>
+          <div class="field"><label for="p-durasi">Durasi (menit)</label><input type="number" id="p-durasi" min="15" max="600" step="15" value="60"></div>
+        </div>
+        <p class="hint" id="p-ruang-hint"></p>
+      </div>
+      <div class="sect">
+        <h4>Konsumsi</h4>
+        <div id="p-konsumsi"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost btn-sm" id="p-k-add">+ Tambah konsumsi</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="p-k-sync">Samakan jumlah dengan rombongan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="field" style="margin-bottom:0;">
+        <label for="p-catatan">Catatan petugas <span class="opt">(opsional, terlihat oleh tamu)</span></label>
+        <textarea id="p-catatan" maxlength="300"></textarea>
+      </div>
+    </div>
+
+    <p class="dlg-msg" id="p-msg" role="status"></p>
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-ghost" id="p-cancel">Batal</button>
+      <button type="button" class="btn btn-primary" id="p-submit">Setujui</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Dialog: batal / tidak hadir -->
+<dialog id="dlg-tutup">
+  <div class="dlg">
+    <h2 id="t-title">Tutup pengajuan</h2>
+    <p class="sub" id="t-sub"></p>
+    <div class="field" style="margin-bottom:0;">
+      <label for="t-alasan">Catatan <span class="opt">(opsional)</span></label>
+      <textarea id="t-alasan" maxlength="300"></textarea>
+    </div>
+    <p class="dlg-msg" id="t-msg" role="status"></p>
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-ghost" id="t-cancel">Kembali</button>
+      <button type="button" class="btn btn-danger" id="t-submit">Konfirmasi</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Dialog: tamu walk-in -->
+<dialog id="dlg-walkin">
+  <div class="dlg">
+    <h2>Tamu walk-in</h2>
+    <p class="sub">Untuk tamu yang datang tanpa mendaftar. Data langsung tercatat sebagai disetujui dan sudah check-in.</p>
+    <div class="grid2">
+      <div class="field full"><label for="w-nama">Nama lengkap</label><input type="text" id="w-nama" maxlength="120"></div>
+      <div class="field"><label for="w-instansi">Instansi / asal</label><input type="text" id="w-instansi" maxlength="120"></div>
+      <div class="field"><label for="w-hp">No. HP</label><input type="tel" id="w-hp" maxlength="20"></div>
+      <div class="field"><label for="w-email">Email <span class="opt">(opsional)</span></label><input type="email" id="w-email" maxlength="120"></div>
+      <div class="field"><label for="w-identitas">No. identitas <span class="opt">(opsional)</span></label><input type="text" id="w-identitas" maxlength="40"></div>
+      <div class="field full"><label for="w-keperluan">Keperluan</label><textarea id="w-keperluan" maxlength="400"></textarea></div>
+      <div class="field"><label for="w-ditemui">Pihak yang ditemui</label>
+        <select id="w-ditemui">
+          <option value="">— Pilih —</option>
+          <option>Ketua DPRD</option><option>Wakil Ketua DPRD</option><option>Sekretaris DPRD</option>
+          <option>Kabag Umum dan Protokol</option><option>Kabag Persidangan dan Perundang-undangan</option><option>Kabag Keuangan</option>
+          <option value="__lain">Lainnya (tulis manual)</option>
+        </select>
+      </div>
+      <div class="field hidden" id="w-ditemui-lain-wrap"><label for="w-ditemui-lain">Sebutkan tujuan</label><input type="text" id="w-ditemui-lain" maxlength="120"></div>
+      <div class="field"><label for="w-topik">Topik konsultasi</label><select id="w-topik"><option value="">— Pilih topik —</option></select></div>
+      <div class="field"><label for="w-jumlah">Jumlah orang</label><input type="number" id="w-jumlah" min="1" max="200" value="1"></div>
+      <div class="field full"><label for="w-topik-ket">Keterangan konsultasi <span class="opt">(opsional)</span></label><textarea id="w-topik-ket" maxlength="500"></textarea></div>
+    </div>
+    <div class="sect">
+      <h4>Konsumsi</h4>
+      <div id="w-konsumsi"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="w-k-add">+ Tambah konsumsi</button>
+    </div>
+    <p class="dlg-msg" id="w-msg" role="status"></p>
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-ghost" id="w-cancel">Batal</button>
+      <button type="button" class="btn btn-primary" id="w-submit">Simpan &amp; check-in</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  var sb = SIGAP.sb;
+  var esc = SIGAP.esc;
+
+  var S = {
+    tab: 'pending', rooms: [], konsumsi: [], alasan: [], topik: [],
+    pending: [], approved: [], riwayat: null, bookings: {}, current: null, aksi: 'setujui', tutup: null
+  };
+
+  var listEl = document.getElementById('list');
+
+  SIGAP.guard(['protokol','admin'], function(){ init(); });
+
+  function byId(id){ return document.getElementById(id); }
+
+  function init(){
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){
+      t.addEventListener('click', function(){ setTab(t.getAttribute('data-tab')); });
+    });
+    byId('reload-btn').addEventListener('click', function(){ loadAll(true); });
+    byId('walkin-btn').addEventListener('click', openWalkin);
+    listEl.addEventListener('click', onListClick);
+    bindProses();
+    bindTutup();
+    bindWalkin();
+    loadAll();
+  }
+
+  // ---------- data ----------
+  function loadAll(forceRiwayat){
+    listEl.innerHTML = '<div class="empty">Memuat…</div>';
+    var pMaster = sb.from('ref_items').select('jenis,nama,urut,aktif').eq('aktif', true).order('urut', { ascending: true });
+    var pRooms = sb.from('rooms').select('id,nama,kapasitas').order('nama');
+    var pPend = sb.from('registrations').select('*').eq('status', 'menunggu-verifikasi')
+      .order('tanggal_kunjungan', { ascending: true }).order('jam_kunjungan', { ascending: true });
+    var pAppr = sb.from('registrations').select('*').eq('status', 'menunggu-checkin')
+      .order('tanggal_kunjungan', { ascending: true }).order('jam_kunjungan', { ascending: true });
+
+    Promise.all([pMaster, pRooms, pPend, pAppr]).then(function(r){
+      for(var i = 0; i < r.length; i++){
+        if(r[i].error){ throw new Error(r[i].error.message || r[i].error.code); }
+      }
+      var items = r[0].data || [];
+      S.topik = items.filter(function(x){ return x.jenis === 'topik'; }).map(function(x){ return x.nama; });
+      S.konsumsi = items.filter(function(x){ return x.jenis === 'konsumsi'; }).map(function(x){ return x.nama; });
+      S.alasan = items.filter(function(x){ return x.jenis === 'alasan_tolak'; }).map(function(x){ return x.nama; });
+      S.rooms = r[1].data || [];
+      S.pending = r[2].data || [];
+      S.approved = r[3].data || [];
+      if(forceRiwayat) S.riwayat = null;
+      return loadBookings();
+    }).then(function(){
+      if(S.tab === 'riwayat' && S.riwayat === null){ return loadRiwayat(); }
+    }).then(render).catch(function(err){
+      listEl.innerHTML = '<div class="empty">Gagal memuat data: ' + esc(err && err.message ? err.message : err) + '</div>';
+    });
+  }
+
+  function loadBookings(){
+    S.bookings = {};
+    var ids = S.approved.map(function(x){ return x.id; });
+    if(!ids.length) return Promise.resolve();
+    return sb.from('room_bookings').select('registration_id,start_at,end_at,rooms(nama)').in('registration_id', ids).then(function(res){
+      if(res.error) return;
+      (res.data || []).forEach(function(b){ S.bookings[b.registration_id] = b; });
+    });
+  }
+
+  function loadRiwayat(){
+    return sb.from('registrations').select('*').in('status', ['selesai','ditolak','batal','tidak-hadir'])
+      .order('created_at', { ascending: false }).limit(100).then(function(res){
+        if(res.error) throw new Error(res.error.message || res.error.code);
+        S.riwayat = res.data || [];
+      });
+  }
+
+  // ---------- tampilan ----------
+  function setTab(t){
+    S.tab = t;
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(el){
+      el.classList.toggle('active', el.getAttribute('data-tab') === t);
+    });
+    if(t === 'riwayat' && S.riwayat === null){
+      listEl.innerHTML = '<div class="empty">Memuat…</div>';
+      loadRiwayat().then(render).catch(function(err){
+        listEl.innerHTML = '<div class="empty">Gagal memuat riwayat: ' + esc(err.message) + '</div>';
+      });
+      return;
+    }
+    render();
+  }
+
+  function fact(label, value, full){
+    if(value === null || value === undefined || value === '') return '';
+    return '<div class="f' + (full ? ' full' : '') + '"><dt>' + label + '</dt><dd>' + esc(value) + '</dd></div>';
+  }
+
+  function konsumsiText(k){
+    if(!k || !k.length) return '';
+    return k.map(function(x){ return x.jenis + ' ×' + x.jumlah; }).join(', ');
+  }
+
+  function statusChip(st){
+    var map = {
+      'menunggu-verifikasi': ['Menunggu verifikasi', ''],
+      'menunggu-checkin': ['Disetujui', 'ok'],
+      'selesai': ['Sudah check-in', 'ok'],
+      'ditolak': ['Ditolak', 'bad'],
+      'batal': ['Dibatalkan', 'mute'],
+      'tidak-hadir': ['Tidak hadir', 'mute']
+    };
+    var m = map[st] || [st, 'mute'];
+    return '<span class="chip ' + m[1] + '">' + esc(m[0]) + '</span>';
+  }
+
+  function card(r, mode){
+    var today = SIGAP.todayWIB();
+    var lewat = r.tanggal_kunjungan < today;
+    var pend = Array.isArray(r.pendamping) && r.pendamping.length ? r.pendamping.join(', ') : '';
+    var topik = r.topik ? (r.topik + (r.topik_keterangan ? ' — ' + r.topik_keterangan : '')) : (r.topik_keterangan || '');
+    var h = '<article class="card" data-id="' + esc(r.id) + '">' +
+      '<div class="card-top"><div><h3>' + esc(r.nama) +
+      (r.sumber === 'walkin' ? '<span class="chip walkin">walk-in</span>' : '') + '</h3>' +
+      '<div class="sub">' + esc(r.instansi) + ' · ' + esc(r.jumlah_rombongan) + ' orang · kode ' + esc(r.kode_kunjungan) + '</div></div>' +
+      statusChip(r.status) + '</div>' +
+      '<dl class="facts">' +
+      fact('Ditemui', r.ditemui) +
+      fact('Jadwal', SIGAP.tgl(r.tanggal_kunjungan) + ' · ' + SIGAP.jam(r.jam_kunjungan)) +
+      fact('Topik', topik, true) +
+      fact('Keperluan', r.keperluan, true) +
+      fact('Kontak', r.hp + (r.email ? ' · ' + r.email : '')) +
+      fact('Identitas', r.identitas) +
+      fact('Pendamping', pend, true);
+
+    if(mode === 'approved'){
+      var b = S.bookings[r.id];
+      h += fact('Ruang', b && b.rooms ? b.rooms.nama + ' (' + hm(b.start_at) + '–' + hm(b.end_at) + ')' : 'Belum ditentukan');
+      h += fact('Konsumsi', konsumsiText(r.konsumsi) || 'Tidak ada');
+    }
+    if(mode === 'riwayat'){
+      h += fact('Konsumsi', konsumsiText(r.konsumsi));
+      if(r.checked_in_at) h += fact('Check-in', new Date(r.checked_in_at).toLocaleString('id-ID'));
+    }
+    h += '</dl>';
+
+    if(r.jadwal_diubah_dari) h += '<div class="note">Jadwal diubah dari ' + esc(r.jadwal_diubah_dari) + '.</div>';
+    if(r.alasan_tolak) h += '<div class="note bad"><b>Alasan penolakan:</b> ' + esc(r.alasan_tolak) + '</div>';
+    if(r.catatan_petugas) h += '<div class="note"><b>Catatan petugas:</b> ' + esc(r.catatan_petugas) + '</div>';
+
+    if(mode === 'pending'){
+      if(lewat) h += '<div class="note warn">Tanggal kunjungan sudah lewat. Pengajuan ini hanya bisa disetujui dengan mengubah jadwal, atau ditolak.</div>';
+      h += '<div class="actions"><button type="button" class="btn btn-primary btn-sm" data-act="proses">Proses pengajuan</button>' +
+        '<button type="button" class="btn btn-danger btn-sm" data-act="batal">Tandai batal</button></div>';
+    } else if(mode === 'approved'){
+      h += '<div class="actions">' +
+        (lewat ? '<button type="button" class="btn btn-ghost btn-sm" data-act="tidakhadir">Tandai tidak hadir</button>' : '') +
+        '<button type="button" class="btn btn-danger btn-sm" data-act="batal">Batalkan</button></div>';
+    }
+    return h + '</article>';
+  }
+
+  function hm(ts){
+    try{
+      return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }).replace('.', ':');
+    }catch(e){ return ''; }
+  }
+
+  function render(){
+    byId('n-pending').textContent = S.pending.length ? '(' + S.pending.length + ')' : '';
+    byId('n-approved').textContent = S.approved.length ? '(' + S.approved.length + ')' : '';
+    var rows, mode, empty;
+    if(S.tab === 'pending'){ rows = S.pending; mode = 'pending'; empty = 'Tidak ada pengajuan yang menunggu verifikasi.'; }
+    else if(S.tab === 'approved'){ rows = S.approved; mode = 'approved'; empty = 'Belum ada kunjungan yang disetujui dan menunggu kedatangan.'; }
+    else { rows = S.riwayat || []; mode = 'riwayat'; empty = 'Belum ada riwayat.'; }
+    if(!rows.length){ listEl.innerHTML = '<div class="empty">' + empty + '</div>'; return; }
+    listEl.innerHTML = rows.map(function(r){ return card(r, mode); }).join('');
+  }
+
+  function findReg(id){
+    var all = S.pending.concat(S.approved, S.riwayat || []);
+    for(var i = 0; i < all.length; i++){ if(all[i].id === id) return all[i]; }
+    return null;
+  }
+
+  function onListClick(e){
+    var btn = e.target.closest('[data-act]');
+    if(!btn) return;
+    var art = btn.closest('.card');
+    var reg = art ? findReg(art.getAttribute('data-id')) : null;
+    if(!reg) return;
+    var act = btn.getAttribute('data-act');
+    if(act === 'proses') openProses(reg);
+    else if(act === 'batal') openTutup(reg, 'batal');
+    else if(act === 'tidakhadir') openTutup(reg, 'tidak-hadir');
+  }
+
+  // ---------- editor konsumsi ----------
+  function konsumsiSelectHtml(selected){
+    if(!S.konsumsi.length){
+      return '<input type="text" class="k-jenis" maxlength="60" placeholder="Jenis konsumsi" value="' + esc(selected || '') + '">';
+    }
+    var opts = '<option value="">— Jenis —</option>' + S.konsumsi.map(function(n){
+      return '<option' + (n === selected ? ' selected' : '') + '>' + esc(n) + '</option>';
+    }).join('');
+    return '<select class="k-jenis">' + opts + '</select>';
+  }
+
+  function addKRow(container, jenis, jumlah){
+    var row = document.createElement('div');
+    row.className = 'krow';
+    row.innerHTML = konsumsiSelectHtml(jenis) +
+      '<input type="number" class="k-jumlah" min="1" max="9999" placeholder="Jml" value="' + (jumlah || '') + '">' +
+      '<button type="button" class="btn btn-ghost btn-sm k-del" aria-label="Hapus baris">✕</button>';
+    row.querySelector('.k-del').addEventListener('click', function(){ row.parentNode.removeChild(row); });
+    container.appendChild(row);
+  }
+
+  // Kembalikan { ok, rows, error }. Baris kosong diabaikan.
+  function readK(container){
+    var rows = [];
+    var els = container.querySelectorAll('.krow');
+    for(var i = 0; i < els.length; i++){
+      var j = els[i].querySelector('.k-jenis').value.trim();
+      var nRaw = els[i].querySelector('.k-jumlah').value.trim();
+      if(!j && !nRaw) continue;
+      var n = parseInt(nRaw, 10);
+      if(!j || !/^[0-9]+$/.test(nRaw) || n < 1 || n > 9999){
+        return { ok: false, error: 'Setiap baris konsumsi butuh jenis dan jumlah 1–9999.' };
+      }
+      rows.push({ jenis: j, jumlah: n });
+    }
+    return { ok: true, rows: rows };
+  }
+
+  // ---------- dialog proses ----------
+  function bindProses(){
+    Array.prototype.forEach.call(byId('p-seg').querySelectorAll('button'), function(b){
+      b.addEventListener('click', function(){ if(!b.disabled) setAksi(b.getAttribute('data-aksi')); });
+    });
+    byId('p-cancel').addEventListener('click', function(){ byId('dlg-proses').close(); });
+    byId('p-k-add').addEventListener('click', function(){ addKRow(byId('p-konsumsi'), '', ''); });
+    byId('p-k-sync').addEventListener('click', function(){
+      var n = S.current ? S.current.jumlah_rombongan : 1;
+      Array.prototype.forEach.call(byId('p-konsumsi').querySelectorAll('.k-jumlah'), function(i){ i.value = n; });
+    });
+    byId('p-alasan-sel').addEventListener('change', function(){
+      byId('p-alasan-lain-wrap').classList.toggle('hidden', byId('p-alasan-sel').value !== 'Lainnya');
+    });
+    byId('p-ruang').addEventListener('change', updateRuangHint);
+    byId('p-submit').addEventListener('click', submitProses);
+  }
+
+  function updateRuangHint(){
+    var sel = byId('p-ruang');
+    var hint = byId('p-ruang-hint');
+    if(!sel.value){ hint.textContent = 'Ruang bisa ditentukan nanti lewat halaman Jadwal Ruang.'; return; }
+    var r = S.rooms.filter(function(x){ return x.id === sel.value; })[0];
+    hint.textContent = r && r.kapasitas ? 'Kapasitas ' + r.kapasitas + ' orang; rombongan ' + S.current.jumlah_rombongan + ' orang.' : '';
+  }
+
+  function setAksi(a){
+    S.aksi = a;
+    Array.prototype.forEach.call(byId('p-seg').querySelectorAll('button'), function(b){
+      b.classList.toggle('on', b.getAttribute('data-aksi') === a);
+    });
+    byId('p-tolak').classList.toggle('hidden', a !== 'tolak');
+    byId('p-jadwal').classList.toggle('hidden', a !== 'jadwal_ulang');
+    byId('p-siap').classList.toggle('hidden', a === 'tolak');
+    var sub = byId('p-submit');
+    sub.textContent = a === 'tolak' ? 'Tolak pengajuan' : (a === 'jadwal_ulang' ? 'Ubah jadwal & setujui' : 'Setujui');
+    sub.className = 'btn ' + (a === 'tolak' ? 'btn-danger' : 'btn-primary');
+    setMsg('p-msg', '');
+  }
+
+  function setMsg(id, text, kind){
+    var el = byId(id);
+    el.textContent = text || '';
+    el.className = 'dlg-msg' + (kind ? ' ' + kind : '');
+  }
+
+  function openProses(reg){
+    S.current = reg;
+    var lewat = reg.tanggal_kunjungan < SIGAP.todayWIB();
+    byId('p-title').textContent = 'Proses: ' + reg.nama;
+    byId('p-sub').textContent = reg.instansi + ' · ' + SIGAP.tgl(reg.tanggal_kunjungan) + ' ' + SIGAP.jam(reg.jam_kunjungan) + ' · ' + reg.jumlah_rombongan + ' orang · ke ' + reg.ditemui;
+
+    byId('p-alasan-sel').innerHTML = '<option value="">— Pilih alasan —</option>' + S.alasan.map(function(n){ return '<option>' + esc(n) + '</option>'; }).join('');
+    byId('p-alasan-lain').value = '';
+    byId('p-alasan-lain-wrap').classList.add('hidden');
+
+    byId('p-tgl').value = lewat ? SIGAP.todayWIB() : reg.tanggal_kunjungan;
+    byId('p-tgl').min = SIGAP.todayWIB();
+    byId('p-jam').value = SIGAP.jam(reg.jam_kunjungan);
+    byId('p-alasan-jadwal').value = '';
+
+    byId('p-ruang').innerHTML = '<option value="">Belum ditentukan</option>' + S.rooms.map(function(r){
+      var kurang = r.kapasitas && r.kapasitas < reg.jumlah_rombongan;
+      return '<option value="' + esc(r.id) + '"' + (kurang ? ' disabled' : '') + '>' + esc(r.nama) +
+        (r.kapasitas ? ' (kapasitas ' + r.kapasitas + (kurang ? ', kurang' : '') + ')' : '') + '</option>';
+    }).join('');
+    byId('p-durasi').value = 60;
+    byId('p-konsumsi').innerHTML = '';
+    addKRow(byId('p-konsumsi'), '', '');
+    byId('p-catatan').value = '';
+
+    byId('p-seg').querySelector('[data-aksi="setujui"]').disabled = lewat;
+    setAksi(lewat ? 'jadwal_ulang' : 'setujui');
+    updateRuangHint();
+    byId('dlg-proses').showModal();
+  }
+
+  function submitProses(){
+    var reg = S.current;
+    if(!reg) return;
+    var a = S.aksi;
+    var alasan = null, tanggal = null, jam = null, konsumsi = [], ruang = null, durasi = 60;
+
+    if(a === 'tolak'){
+      var sel = byId('p-alasan-sel').value;
+      alasan = sel === 'Lainnya' ? byId('p-alasan-lain').value.trim() : sel;
+      if(!alasan){ setMsg('p-msg', 'Alasan penolakan wajib diisi.', 'error'); return; }
+    }else{
+      if(a === 'jadwal_ulang'){
+        tanggal = byId('p-tgl').value;
+        jam = byId('p-jam').value;
+        alasan = byId('p-alasan-jadwal').value.trim();
+        if(!tanggal || !jam){ setMsg('p-msg', 'Tanggal dan jam baru wajib diisi.', 'error'); return; }
+        if(tanggal < SIGAP.todayWIB()){ setMsg('p-msg', 'Tanggal baru tidak boleh sebelum hari ini.', 'error'); return; }
+        if(!alasan){ setMsg('p-msg', 'Alasan perubahan jadwal wajib diisi.', 'error'); return; }
+      }
+      var k = readK(byId('p-konsumsi'));
+      if(!k.ok){ setMsg('p-msg', k.error, 'error'); return; }
+      konsumsi = k.rows;
+      ruang = byId('p-ruang').value || null;
+      durasi = parseInt(byId('p-durasi').value, 10) || 60;
+    }
+
+    var btn = byId('p-submit');
+    btn.disabled = true;
+    setMsg('p-msg', 'Menyimpan…');
+    sb.rpc('verify_registration', {
+      p_id: reg.id, p_aksi: a, p_alasan: alasan, p_tanggal: tanggal, p_jam: jam,
+      p_konsumsi: konsumsi, p_room_id: ruang, p_durasi_menit: durasi,
+      p_catatan: byId('p-catatan').value.trim() || null
+    }).then(function(res){
+      btn.disabled = false;
+      if(res.error){ setMsg('p-msg', 'Gagal: ' + (res.error.message || res.error.code), 'error'); return; }
+      var row = res.data && res.data[0];
+      if(!row){ setMsg('p-msg', 'Tidak ada respons dari server.', 'error'); return; }
+      if(row.result !== 'success'){ setMsg('p-msg', row.message || row.result, 'error'); return; }
+      byId('dlg-proses').close();
+      loadAll(true);
+    }).catch(function(){
+      btn.disabled = false;
+      setMsg('p-msg', 'Gagal terhubung ke server.', 'error');
+    });
+  }
+
+  // ---------- dialog batal / tidak hadir ----------
+  function bindTutup(){
+    byId('t-cancel').addEventListener('click', function(){ byId('dlg-tutup').close(); });
+    byId('t-submit').addEventListener('click', submitTutup);
+  }
+
+  function openTutup(reg, status){
+    S.tutup = { reg: reg, status: status };
+    byId('t-title').textContent = status === 'batal' ? 'Batalkan pengajuan' : 'Tandai tidak hadir';
+    byId('t-sub').textContent = reg.nama + ' · ' + SIGAP.tgl(reg.tanggal_kunjungan) + ' ' + SIGAP.jam(reg.jam_kunjungan) +
+      (status === 'batal' ? '. Ruang yang sudah dipesan akan dibebaskan.' : '. Ruang yang sudah dipesan akan dibebaskan.');
+    byId('t-alasan').value = '';
+    setMsg('t-msg', '');
+    byId('dlg-tutup').showModal();
+  }
+
+  function submitTutup(){
+    var t = S.tutup;
+    if(!t) return;
+    var btn = byId('t-submit');
+    btn.disabled = true;
+    setMsg('t-msg', 'Menyimpan…');
+    sb.rpc('close_registration', { p_id: t.reg.id, p_status: t.status, p_alasan: byId('t-alasan').value.trim() || null }).then(function(res){
+      btn.disabled = false;
+      if(res.error){ setMsg('t-msg', 'Gagal: ' + (res.error.message || res.error.code), 'error'); return; }
+      var row = res.data && res.data[0];
+      if(!row || row.result !== 'success'){ setMsg('t-msg', row ? row.message : 'Tidak ada respons.', 'error'); return; }
+      byId('dlg-tutup').close();
+      loadAll(true);
+    }).catch(function(){
+      btn.disabled = false;
+      setMsg('t-msg', 'Gagal terhubung ke server.', 'error');
+    });
+  }
+
+  // ---------- dialog walk-in ----------
+  function bindWalkin(){
+    byId('w-cancel').addEventListener('click', function(){ byId('dlg-walkin').close(); });
+    byId('w-k-add').addEventListener('click', function(){ addKRow(byId('w-konsumsi'), '', ''); });
+    byId('w-ditemui').addEventListener('change', function(){
+      byId('w-ditemui-lain-wrap').classList.toggle('hidden', byId('w-ditemui').value !== '__lain');
+    });
+    byId('w-submit').addEventListener('click', submitWalkin);
+  }
+
+  function openWalkin(){
+    ['w-nama','w-instansi','w-hp','w-email','w-identitas','w-keperluan','w-ditemui-lain','w-topik-ket'].forEach(function(id){ byId(id).value = ''; });
+    byId('w-ditemui').value = '';
+    byId('w-ditemui-lain-wrap').classList.add('hidden');
+    byId('w-jumlah').value = 1;
+    byId('w-topik').innerHTML = '<option value="">— Pilih topik —</option>' + S.topik.map(function(n){ return '<option>' + esc(n) + '</option>'; }).join('');
+    byId('w-konsumsi').innerHTML = '';
+    addKRow(byId('w-konsumsi'), '', '');
+    setMsg('w-msg', '');
+    byId('dlg-walkin').showModal();
+  }
+
+  function submitWalkin(){
+    var ditemui = byId('w-ditemui').value === '__lain' ? byId('w-ditemui-lain').value.trim() : byId('w-ditemui').value;
+    var p = {
+      p_nama: byId('w-nama').value.trim(), p_instansi: byId('w-instansi').value.trim(), p_hp: byId('w-hp').value.trim(),
+      p_keperluan: byId('w-keperluan').value.trim(), p_ditemui: ditemui,
+      p_topik: byId('w-topik').value || null, p_topik_keterangan: byId('w-topik-ket').value.trim() || null,
+      p_jumlah: parseInt(byId('w-jumlah').value, 10) || 0,
+      p_identitas: byId('w-identitas').value.trim() || null, p_email: byId('w-email').value.trim() || null
+    };
+    if(!p.p_nama || !p.p_instansi || !p.p_hp || !p.p_keperluan || !p.p_ditemui){
+      setMsg('w-msg', 'Nama, instansi, HP, keperluan, dan pihak yang ditemui wajib diisi.', 'error'); return;
+    }
+    if(p.p_jumlah < 1 || p.p_jumlah > 200){ setMsg('w-msg', 'Jumlah orang harus 1–200.', 'error'); return; }
+    var k = readK(byId('w-konsumsi'));
+    if(!k.ok){ setMsg('w-msg', k.error, 'error'); return; }
+    p.p_konsumsi = k.rows;
+
+    var btn = byId('w-submit');
+    btn.disabled = true;
+    setMsg('w-msg', 'Menyimpan…');
+    sb.rpc('create_walkin', p).then(function(res){
+      btn.disabled = false;
+      if(res.error){ setMsg('w-msg', 'Gagal: ' + (res.error.message || res.error.code), 'error'); return; }
+      var row = res.data && res.data[0];
+      if(!row || row.result !== 'success'){ setMsg('w-msg', row ? row.message : 'Tidak ada respons.', 'error'); return; }
+      setMsg('w-msg', 'Tersimpan. Kode kunjungan: ' + row.kode, 'okmsg');
+      loadAll(true);
+      setTimeout(function(){ if(byId('dlg-walkin').open) byId('dlg-walkin').close(); }, 1600);
+    }).catch(function(){
+      btn.disabled = false;
+      setMsg('w-msg', 'Gagal terhubung ke server.', 'error');
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
