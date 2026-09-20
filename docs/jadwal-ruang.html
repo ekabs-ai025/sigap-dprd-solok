@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="staff.js"></script>
 <style>
   :root{
     --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
@@ -49,8 +50,9 @@
   .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
   .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
   .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
-  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right;}
+  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right; max-width:75%;}
   .who a{color:var(--maroon); font-weight:600; text-decoration:none; font-size:0.78rem;}
+  .who-links{line-height:1.5;}
 
   main{padding:32px 0 64px;}
   .eyebrow{
@@ -138,10 +140,7 @@
       <span class="mark">SG</span>
       <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
     </div>
-    <div class="who">
-      <div id="staff-email">…</div>
-      <a href="verifikasi.html">Verifikasi</a> · <a href="admin.html">Rekap Kunjungan</a> · <a href="#" id="logout-link">Keluar</a>
-    </div>
+    <div class="who" id="staff-who">…</div>
   </div>
 </header>
 
@@ -220,11 +219,8 @@
 
 <script>
 (function(){
-  var SUPABASE_URL = 'https://bekpxjxxpnseizmvysyo.supabase.co';
-  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla3B4anh4cG5zZWl6bXZ5c3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMjgxNDUsImV4cCI6MjEwNDYwNDE0NX0.iiDyGIoOiUkKIyMz1lkZtOsPQSfMnFCUOnPnoTJgaIY';
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var sb = SIGAP.sb;
 
-  var staffEmailEl = document.getElementById('staff-email');
   var roomListEl = document.getElementById('room-list');
   var roomSelectEl = document.getElementById('booking-room');
   var roomStatusEl = document.getElementById('room-status');
@@ -234,23 +230,12 @@
 
   var rooms = [];
 
-  sb.auth.getSession().then(function(res){
-    var session = res.data && res.data.session;
-    if(!session){
-      window.location.href = 'login.html';
-      return;
-    }
-    staffEmailEl.textContent = session.user.email;
+  SIGAP.guard(['protokol','admin'], function(){
     loadRooms();
     var todayWib = wibToday();
     filterTanggalEl.value = todayWib;
     document.getElementById('booking-tanggal').value = todayWib;
     loadSchedule();
-  });
-
-  document.getElementById('logout-link').addEventListener('click', function(e){
-    e.preventDefault();
-    sb.auth.signOut().then(function(){ window.location.href = 'login.html'; });
   });
 
   function wibToday(){
