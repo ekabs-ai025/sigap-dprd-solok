@@ -189,7 +189,7 @@
     <div class="page-header">
       <span class="eyebrow">Pra-Registrasi Kunjungan</span>
       <h1 class="page-title">Daftarkan kunjungan Anda ke Sekretariat DPRD Kabupaten Solok</h1>
-      <p class="page-sub">Isi formulir ini sebelum berangkat. Setelah dikirim, Anda akan mendapatkan kode kunjungan berbentuk QR — tunjukkan kode tersebut kepada petugas keamanan saat tiba di lobi.</p>
+      <p class="page-sub">Isi formulir ini sebelum berangkat. Setelah dikirim, petugas protokol akan memverifikasi pengajuan Anda. Tiket QR terbit setelah disetujui — simpan kode kunjungan Anda untuk mengecek statusnya.</p>
     </div>
 
     <div class="banner" id="unavailable-banner" style="display:none;">
@@ -235,6 +235,17 @@
             <label for="keperluan">Keperluan Kunjungan <span class="opt">(wajib)</span></label>
             <textarea id="keperluan" name="keperluan" required="" placeholder="mis. Audiensi program infrastruktur 2026"></textarea>
             <span class="err">Keperluan kunjungan wajib diisi.</span>
+          </div>
+          <div class="field full" id="topik-wrap" style="display:none;">
+            <label for="topik">Topik Konsultasi <span class="opt">(wajib)</span></label>
+            <select id="topik" name="topik">
+              <option value="">— Pilih topik —</option>
+            </select>
+            <span class="err">Pilih topik konsultasi.</span>
+          </div>
+          <div class="field full" id="topik-ket-wrap" style="display:none;">
+            <label for="topik-ket">Keterangan Konsultasi <span class="opt">(opsional, maks. 500 karakter)</span></label>
+            <textarea id="topik-ket" name="topik-ket" maxlength="500" placeholder="mis. Konsultasi penyusunan rancangan peraturan daerah"></textarea>
           </div>
           <div class="field full">
             <label for="ditemui">Pejabat / Unit yang Dituju <span class="opt">(wajib)</span></label>
@@ -290,8 +301,8 @@
         <div class="confirm-badge">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l4.5 4.5L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         </div>
-        <h2>Pra-registrasi berhasil</h2>
-        <p class="lead">Simpan atau tangkap layar kode ini. Tunjukkan kepada petugas keamanan saat tiba.</p>
+        <h2 id="confirm-title">Pra-registrasi berhasil</h2>
+        <p class="lead" id="confirm-lead">Simpan atau tangkap layar kode ini. Tunjukkan kepada petugas keamanan saat tiba.</p>
         <div id="qr-holder"></div>
         <div class="kode" id="kode-display"></div>
         <dl class="summary" id="summary-list"></dl>
@@ -299,11 +310,13 @@
       <div class="ticket-actions">
         <button type="button" class="btn btn-primary" id="print-btn">Cetak / Simpan PDF</button>
         <button type="button" class="btn btn-ghost" id="download-btn">Unduh Gambar Tiket</button>
+        <a class="btn btn-primary" id="status-btn" href="#" style="display:none;">Cek Status Pengajuan</a>
+        <button type="button" class="btn btn-ghost" id="copy-btn" style="display:none;">Salin Kode</button>
       </div>
       <p class="ticket-link-note">Tautan tiket ini (bisa dibuka lagi kapan saja): <a id="ticket-link" href="#" target="_blank" rel="noopener"></a></p>
       <button type="button" class="btn btn-ghost" id="reset-btn">Daftarkan Tamu Lain</button>
     </div>
-    <p class="confirm-note">Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.</p>
+    <p class="confirm-note" id="confirm-note">Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.</p>
   </div>
 </main>
 
@@ -336,6 +349,30 @@
   var confirmView = document.getElementById('confirm-view');
 
   if(!sb){ unavailableBanner.style.display = 'flex'; }
+
+  var topikSelect = document.getElementById('topik');
+  var topikKetInput = document.getElementById('topik-ket');
+
+  // Daftar topik dikelola petugas (tabel ref_items). Jika gagal dimuat, kolom topik disembunyikan
+  // dan pendaftaran tetap bisa dikirim.
+  function loadTopik(){
+    if(!sb) return;
+    sb.from('ref_items').select('nama').eq('jenis','topik').eq('aktif',true).order('urut',{ascending:true})
+      .then(function(res){
+        if(res.error || !res.data || !res.data.length) return;
+        res.data.forEach(function(row){
+          var o = document.createElement('option');
+          o.value = row.nama;
+          o.textContent = row.nama;
+          topikSelect.appendChild(o);
+        });
+        topikSelect.required = true;
+        document.getElementById('topik-wrap').style.display = '';
+        document.getElementById('topik-ket-wrap').style.display = '';
+      })
+      .catch(function(){});
+  }
+  loadTopik();
 
   var today = new Date();
   var isoToday = today.toISOString().slice(0,10);
@@ -464,6 +501,8 @@
       identitas: document.getElementById('identitas').value.trim() || null,
       keperluan: document.getElementById('keperluan').value.trim(),
       ditemui: ditemuiVal,
+      topik: topikSelect.value || null,
+      topikKeterangan: topikKetInput.value.trim() || null,
       tanggalKunjungan: tanggalVal,
       jamKunjungan: jamVal,
       jumlahRombongan: parseInt(jumlahInput.value,10) || 1,
@@ -481,6 +520,8 @@
         identitas: formData.identitas,
         keperluan: formData.keperluan,
         ditemui: formData.ditemui,
+        topik: formData.topik,
+        topik_keterangan: formData.topikKeterangan,
         tanggal_kunjungan: formData.tanggalKunjungan,
         jam_kunjungan: formData.jamKunjungan,
         jumlah_rombongan: formData.jumlahRombongan,
@@ -497,12 +538,18 @@
           statusEl.classList.add('error');
           return;
         }
-        try{
-          showConfirmation(kode, formData);
-        }catch(renderErr){
-          submitBtn.disabled = false;
-          statusEl.textContent = 'Tersimpan dengan kode ' + kode + ', namun tampilan tiket gagal dimuat. Catat kode ini.';
+        // Status sebenarnya ditentukan server (bisa menunggu verifikasi), jadi dibaca ulang, bukan ditebak.
+        function tampil(st){
+          try{
+            showConfirmation(kode, formData, st);
+          }catch(renderErr){
+            submitBtn.disabled = false;
+            statusEl.textContent = 'Tersimpan dengan kode ' + kode + ', namun tampilan konfirmasi gagal dimuat. Catat kode ini.';
+          }
         }
+        sb.rpc('get_registration_by_kode', { p_kode: kode }).then(function(r2){
+          tampil(r2 && r2.data && r2.data[0] ? r2.data[0].status : null);
+        }).catch(function(){ tampil(null); });
       }).catch(function(){
         submitBtn.disabled = false;
         statusEl.textContent = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
@@ -512,21 +559,31 @@
     attemptSave(3);
   });
 
-  function showConfirmation(kode, data){
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function showConfirmation(kode, data, status){
+    // Tiket QR hanya sah setelah disetujui petugas. Selain 'menunggu-checkin' (sudah disetujui), anggap masih menunggu verifikasi.
+    var menunggu = status !== 'menunggu-checkin';
     document.getElementById('kode-display').textContent = kode;
     var summary = document.getElementById('summary-list');
     summary.innerHTML =
-      fieldRow('Nama', data.nama) +
-      fieldRow('Instansi', data.instansi) +
-      fieldRow('Ditemui', data.ditemui) +
-      fieldRow('Jadwal', data.tanggalKunjungan + ' · ' + data.jamKunjungan) +
-      fieldRow('Rombongan', data.jumlahRombongan + ' orang');
+      fieldRow('Nama', esc(data.nama)) +
+      fieldRow('Instansi', esc(data.instansi)) +
+      fieldRow('Ditemui', esc(data.ditemui)) +
+      fieldRow('Topik', esc(data.topik)) +
+      fieldRow('Jadwal', esc(data.tanggalKunjungan) + ' · ' + esc(data.jamKunjungan)) +
+      fieldRow('Rombongan', esc(data.jumlahRombongan) + ' orang');
 
     var qrHolder = document.getElementById('qr-holder');
     qrHolder.innerHTML = '';
-    if(typeof QRCode !== 'undefined'){
+    if(!menunggu && typeof QRCode !== 'undefined'){
       new QRCode(qrHolder, { text: kode, width: 148, height: 148, colorDark: '#241712', colorLight: '#ffffff' });
     }
+    qrHolder.style.display = menunggu ? 'none' : 'flex';
 
     var relUrl = 'tiket.html?kode=' + encodeURIComponent(kode);
     var absUrl = relUrl;
@@ -535,6 +592,20 @@
     linkEl.href = relUrl;
     linkEl.textContent = absUrl;
 
+    document.getElementById('confirm-title').textContent = menunggu ? 'Pengajuan diterima' : 'Pra-registrasi berhasil';
+    document.getElementById('confirm-lead').textContent = menunggu
+      ? 'Petugas akan memverifikasi pengajuan Anda. Simpan kode di bawah, lalu cek statusnya secara berkala. Tiket QR terbit setelah disetujui.'
+      : 'Simpan atau tangkap layar kode ini. Tunjukkan kepada petugas keamanan saat tiba.';
+    document.getElementById('confirm-note').textContent = menunggu
+      ? 'Tanpa kode ini Anda tidak dapat melihat status pengajuan. Buka halaman Cek Tiket dan masukkan kode kunjungan Anda kapan saja.'
+      : 'Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.';
+    document.getElementById('print-btn').style.display = menunggu ? 'none' : '';
+    document.getElementById('download-btn').style.display = menunggu ? 'none' : '';
+    var statusBtn = document.getElementById('status-btn');
+    statusBtn.style.display = menunggu ? '' : 'none';
+    statusBtn.href = relUrl;
+    document.getElementById('copy-btn').style.display = menunggu ? '' : 'none';
+
     main.classList.add('confirm-mode');
     confirmView.classList.add('active');
     window.scrollTo({top:0, behavior:'smooth'});
@@ -542,6 +613,20 @@
 
   document.getElementById('print-btn').addEventListener('click', function(){
     window.print();
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', function(){
+    var btn = this;
+    var kode = document.getElementById('kode-display').textContent;
+    function selesai(ok){
+      btn.textContent = ok ? 'Kode tersalin' : 'Salin manual kode di atas';
+      setTimeout(function(){ btn.textContent = 'Salin Kode'; }, 2000);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(kode).then(function(){ selesai(true); }, function(){ selesai(false); });
+    }else{
+      selesai(false);
+    }
   });
 
   document.getElementById('download-btn').addEventListener('click', function(){
