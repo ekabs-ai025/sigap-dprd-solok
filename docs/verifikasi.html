@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="staff.js"></script>
 <style>
   :root{
     --bg:#FBF6EC; --surface:#FFFFFF; --surface-alt:#F2E8D2;
@@ -50,8 +51,28 @@
   .brand .mark{width:32px; height:32px; border-radius:8px; background:var(--maroon); color:var(--maroon-ink); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.8rem; flex-shrink:0;}
   .brand .name{font-family:'Fraunces',serif; font-weight:650; font-size:1rem;}
   .brand small{display:block; font-family:'Public Sans',sans-serif; font-weight:500; font-size:0.66rem; color:var(--ink-soft);}
-  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right;}
+  .who{font-size:0.8rem; color:var(--ink-soft); text-align:right; max-width:75%;}
   .who a{color:var(--maroon); font-weight:600; text-decoration:none; font-size:0.78rem;}
+  .who-links{line-height:1.5;}
+
+  .jadwal-head{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;}
+  .jadwal-head h2{font-size:1rem;}
+  .jadwal-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px;}
+  .jadwal-item{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+    display:flex; gap:12px; align-items:flex-start; font-size:0.88rem;
+  }
+  .jadwal-item .jam{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--maroon); flex-shrink:0; width:44px;}
+  .jadwal-item .info{flex:1; min-width:0;}
+  .jadwal-item .info b{display:block; font-weight:600;}
+  .jadwal-item .info span{color:var(--ink-soft); font-size:0.82rem;}
+  .chip{
+    font-family:'IBM Plex Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.04em;
+    padding:3px 8px; border-radius:5px; font-weight:600; flex-shrink:0; white-space:nowrap;
+    background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold);
+  }
+  .chip.done{background:color-mix(in srgb, var(--ok) 16%, transparent); color:var(--ok);}
+  .empty{color:var(--ink-faint); font-size:0.9rem; text-align:center; padding:24px 0;}
 
   main{padding:32px 0 64px;}
   .eyebrow{
@@ -127,10 +148,7 @@
       <span class="mark">SG</span>
       <div><span class="name">SIGAP</span><small>Sekretariat DPRD Kabupaten Solok</small></div>
     </div>
-    <div class="who">
-      <div id="staff-email">…</div>
-      <a href="admin.html">Rekap Kunjungan</a> · <a href="jadwal-ruang.html">Jadwal Ruang</a> · <a href="#" id="logout-link">Keluar</a>
-    </div>
+    <div class="who" id="staff-who">…</div>
   </div>
 </header>
 
@@ -142,6 +160,7 @@
     <div class="mode-tabs">
       <div class="mode-tab active" id="tab-scan">Scan QR</div>
       <div class="mode-tab" id="tab-manual">Ketik Manual</div>
+      <div class="mode-tab" id="tab-jadwal">Jadwal Hari Ini</div>
     </div>
 
     <div class="panel active" id="panel-scan">
@@ -154,6 +173,14 @@
         <input type="text" id="kode-input" placeholder="SGP-20260916-AB12" autocomplete="off">
         <button type="button" class="btn btn-primary" id="verify-btn">Verifikasi Kode</button>
       </div>
+    </div>
+
+    <div class="panel" id="panel-jadwal">
+      <div class="jadwal-head">
+        <h2 id="jadwal-title">Tamu hari ini</h2>
+        <button type="button" class="btn btn-ghost" id="jadwal-refresh">Muat ulang</button>
+      </div>
+      <ul class="jadwal-list" id="jadwal-list"></ul>
     </div>
 
     <div class="result" id="result">
@@ -173,11 +200,10 @@
 
 <script>
 (function(){
-  var SUPABASE_URL = 'https://bekpxjxxpnseizmvysyo.supabase.co';
-  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla3B4anh4cG5zZWl6bXZ5c3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMjgxNDUsImV4cCI6MjEwNDYwNDE0NX0.iiDyGIoOiUkKIyMz1lkZtOsPQSfMnFCUOnPnoTJgaIY';
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var sb = SIGAP.sb;
+  var esc = SIGAP.esc;
+  var myRole = null;
 
-  var staffEmailEl = document.getElementById('staff-email');
   var kodeInput = document.getElementById('kode-input');
   var verifyBtn = document.getElementById('verify-btn');
   var resultEl = document.getElementById('result');
@@ -192,25 +218,15 @@
   var scannerRunning = false;
   var busy = false;
 
-  sb.auth.getSession().then(function(res){
-    var session = res.data && res.data.session;
-    if(!session){
-      window.location.href = 'login.html';
-      return;
-    }
-    staffEmailEl.textContent = session.user.email;
+  SIGAP.beforeLogout = function(){ stopScanner(); };
+  SIGAP.guard(['satpam','protokol','admin'], function(ctx){
+    myRole = ctx.role;
     startScanner();
-  });
-
-  document.getElementById('logout-link').addEventListener('click', function(e){
-    e.preventDefault();
-    stopScanner();
-    sb.auth.signOut().then(function(){ window.location.href = 'login.html'; });
   });
 
   function fieldRow(label, value){
     if(!value) return '';
-    return '<div class="row"><dt>' + label + '</dt><dd>' + value + '</dd></div>';
+    return '<div class="row"><dt>' + label + '</dt><dd>' + esc(value) + '</dd></div>';
   }
 
   function renderDetail(row){
@@ -250,9 +266,7 @@
         showResult('error', '✕ Gagal memverifikasi', 'Detail: ' + detail + '. Jika berulang, coba keluar lalu login ulang.', null,
           '<button type="button" class="btn btn-ghost" id="relogin-btn">Login Ulang</button>');
         var reloginBtn = document.getElementById('relogin-btn');
-        if(reloginBtn) reloginBtn.addEventListener('click', function(){
-          sb.auth.signOut().then(function(){ window.location.href = 'login.html'; });
-        });
+        if(reloginBtn) reloginBtn.addEventListener('click', function(){ SIGAP.logout(); });
         return;
       }
       var row = res.data && res.data[0];
@@ -263,6 +277,20 @@
       if(row.result === 'already_checked_in'){
         var when = row.checked_in_at ? new Date(row.checked_in_at).toLocaleString('id-ID') : '';
         showResult('warn', '⚠ Kode sudah pernah check-in', 'Kode ini sudah digunakan untuk check-in sebelumnya' + (when ? ' pada ' + when : '') + '. Tidak dapat digunakan lagi.', row, '');
+        return;
+      }
+      if(row.result === 'not_approved'){
+        var toQueue = (myRole === 'protokol' || myRole === 'admin')
+          ? '<a class="btn btn-primary" href="verifikasi-pendaftaran.html" style="text-decoration:none;">Buka Antrean Verifikasi</a>' : '';
+        showResult('warn', '⚠ Pengajuan belum diverifikasi', 'Tamu ini belum disetujui petugas protokol, jadi belum boleh check-in. Minta tamu menunggu dan hubungi petugas protokol.', row, toQueue);
+        return;
+      }
+      if(row.result === 'rejected'){
+        showResult('error', '✕ Pengajuan ditolak', 'Pengajuan kunjungan ini tidak disetujui. Tamu tidak dapat check-in dengan kode ini.', row, '');
+        return;
+      }
+      if(row.result === 'cancelled'){
+        showResult('error', '✕ Pengajuan dibatalkan', 'Kunjungan ini sudah dibatalkan atau ditandai tidak hadir. Tamu tidak dapat check-in dengan kode ini.', row, '');
         return;
       }
       if(row.result === 'wrong_date'){
@@ -291,20 +319,61 @@
   // Tabs
   var tabScan = document.getElementById('tab-scan');
   var tabManual = document.getElementById('tab-manual');
+  var tabJadwal = document.getElementById('tab-jadwal');
   var panelScan = document.getElementById('panel-scan');
   var panelManual = document.getElementById('panel-manual');
+  var panelJadwal = document.getElementById('panel-jadwal');
+
+  function pilihTab(tab, panel){
+    [tabScan, tabManual, tabJadwal].forEach(function(t){ t.classList.remove('active'); });
+    [panelScan, panelManual, panelJadwal].forEach(function(p){ p.classList.remove('active'); });
+    tab.classList.add('active');
+    panel.classList.add('active');
+  }
 
   tabScan.addEventListener('click', function(){
-    tabScan.classList.add('active'); tabManual.classList.remove('active');
-    panelScan.classList.add('active'); panelManual.classList.remove('active');
+    pilihTab(tabScan, panelScan);
     startScanner();
   });
   tabManual.addEventListener('click', function(){
-    tabManual.classList.add('active'); tabScan.classList.remove('active');
-    panelManual.classList.add('active'); panelScan.classList.remove('active');
+    pilihTab(tabManual, panelManual);
     stopScanner();
     kodeInput.focus();
   });
+  tabJadwal.addEventListener('click', function(){
+    pilihTab(tabJadwal, panelJadwal);
+    stopScanner();
+    loadJadwal();
+  });
+  document.getElementById('jadwal-refresh').addEventListener('click', loadJadwal);
+
+  // Jadwal hari ini: tanpa data pribadi (tanpa HP/identitas), boleh dilihat satpam.
+  function loadJadwal(){
+    var listEl = document.getElementById('jadwal-list');
+    listEl.innerHTML = '<li class="empty">Memuat…</li>';
+    sb.rpc('jadwal_hari_ini').then(function(res){
+      if(res.error){
+        listEl.innerHTML = '<li class="empty">Gagal memuat jadwal: ' + esc(res.error.message || res.error.code) + '</li>';
+        return;
+      }
+      var rows = res.data || [];
+      document.getElementById('jadwal-title').textContent = 'Tamu hari ini (' + rows.length + ')';
+      if(!rows.length){
+        listEl.innerHTML = '<li class="empty">Belum ada tamu yang disetujui untuk hari ini.</li>';
+        return;
+      }
+      listEl.innerHTML = rows.map(function(r){
+        var sudah = r.status === 'selesai';
+        return '<li class="jadwal-item">' +
+          '<span class="jam">' + esc(SIGAP.jam(r.jam_kunjungan)) + '</span>' +
+          '<div class="info"><b>' + esc(r.nama) + '</b><span>' + esc(r.instansi) + ' · ' + esc(r.jumlah_rombongan) + ' orang · ke ' + esc(r.ditemui) + (r.sumber === 'walkin' ? ' · walk-in' : '') + '</span></div>' +
+          '<span class="chip' + (sudah ? ' done' : '') + '">' + (sudah ? 'Sudah datang' : 'Menunggu') + '</span>' +
+          '</li>';
+      }).join('');
+    }).catch(function(){
+      listEl.innerHTML = '<li class="empty">Gagal terhubung ke server.</li>';
+    });
+  }
 
   function startScanner(){
     if(scannerRunning || typeof Html5Qrcode === 'undefined') return;
