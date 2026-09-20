@@ -125,6 +125,15 @@
     letter-spacing:0.05em; font-weight:600; color:var(--gold-bright);
     background:color-mix(in srgb, var(--maroon) 12%, transparent); padding:5px 11px; border-radius:6px; margin-bottom:16px;
   }
+  .status-note{
+    text-align:left; border:1px solid var(--line); background:var(--surface-alt); border-radius:10px;
+    padding:12px 14px; font-size:0.84rem; color:var(--ink-soft); margin:0 0 16px; display:none;
+  }
+  .status-note.show{display:block;}
+  .status-note b{color:var(--ink); font-weight:600;}
+  .status-note.bad{border-color:var(--danger,#B3261E);}
+  .confirm-badge.bad{background:color-mix(in srgb, var(--danger,#B3261E) 14%, transparent); color:var(--danger,#B3261E);}
+  .confirm-badge.wait{background:color-mix(in srgb, var(--gold) 18%, transparent); color:var(--gold-bright);}
   .summary{text-align:left; border-top:1px dashed var(--line); padding-top:16px; display:flex; flex-direction:column; gap:10px; margin-bottom:0;}
   .summary .row{display:flex; justify-content:space-between; gap:12px; font-size:0.86rem;}
   .summary .row dt{color:var(--ink-faint); flex-shrink:0;}
@@ -164,7 +173,7 @@
     <div class="page-header" id="lookup-block">
       <span class="eyebrow">Cek Tiket Kunjungan</span>
       <h1 class="page-title">Buka kembali tiket kunjungan Anda</h1>
-      <p class="page-sub">Masukkan kode kunjungan yang diberikan saat pra-registrasi (format SGP-YYYYMMDD-XXXX) untuk menampilkan ulang tiket dan kode QR.</p>
+      <p class="page-sub">Masukkan kode kunjungan yang diberikan saat pra-registrasi (format SGP-YYYYMMDD-XXXX) untuk melihat status pengajuan. Jika sudah disetujui, tiket dan kode QR akan ditampilkan.</p>
 
       <div class="lookup-card">
         <form id="lookup-form">
@@ -184,12 +193,11 @@
   <div class="wrap confirm" id="confirm-view">
     <div class="confirm-card">
       <div class="ticket-face" id="ticket-face">
-        <div class="confirm-badge">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l4.5 4.5L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-        </div>
-        <h2>Tiket Kunjungan Anda</h2>
-        <p class="lead">Tunjukkan kode QR ini kepada petugas keamanan saat tiba di lobi.</p>
+        <div class="confirm-badge" id="ticket-badge"></div>
+        <h2 id="ticket-title">Tiket Kunjungan Anda</h2>
+        <p class="lead" id="ticket-lead">Tunjukkan kode QR ini kepada petugas keamanan saat tiba di lobi.</p>
         <span class="status-pill" id="status-pill"></span>
+        <div class="status-note" id="status-note"></div>
         <div id="qr-holder"></div>
         <div class="kode" id="kode-display"></div>
         <dl class="summary" id="summary-list"></dl>
@@ -197,10 +205,12 @@
       <div class="ticket-actions">
         <button type="button" class="btn btn-primary" id="print-btn">Cetak / Simpan PDF</button>
         <button type="button" class="btn btn-ghost" id="download-btn">Unduh Gambar Tiket</button>
+        <button type="button" class="btn btn-primary" id="refresh-btn" style="display:none;">Periksa Status Terbaru</button>
+        <a class="btn btn-primary" id="reapply-btn" href="pra-registrasi.html" style="display:none;">Ajukan Kembali</a>
       </div>
       <button type="button" class="btn btn-ghost" id="back-btn">Cari Tiket Lain</button>
     </div>
-    <p class="confirm-note">Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.</p>
+    <p class="confirm-note" id="confirm-note">Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.</p>
   </div>
 </main>
 
@@ -227,33 +237,108 @@
   var statusEl = document.getElementById('lookup-status');
   var confirmView = document.getElementById('confirm-view');
 
-  function fieldRow(label, value){
-    if(!value) return '';
-    return '<div class="row"><dt>' + label + '</dt><dd>' + value + '</dd></div>';
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
   }
 
+  function fieldRow(label, value){
+    if(!value) return '';
+    return '<div class="row"><dt>' + label + '</dt><dd>' + esc(value) + '</dd></div>';
+  }
+
+  var STATUS_LABEL = {
+    'menunggu-verifikasi': 'Menunggu Verifikasi',
+    'menunggu-checkin': 'Disetujui',
+    'selesai': 'Sudah Check-in',
+    'ditolak': 'Tidak Disetujui',
+    'batal': 'Dibatalkan',
+    'tidak-hadir': 'Tidak Hadir'
+  };
   function humanizeStatus(status){
-    if(!status || status === 'menunggu-checkin') return 'Menunggu Check-in';
-    if(status === 'selesai') return 'Sudah Check-in';
+    if(!status) return 'Disetujui';
+    if(STATUS_LABEL[status]) return STATUS_LABEL[status];
     return status.split('-').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
   }
 
+  var ICON_OK = '<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l4.5 4.5L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var ICON_WAIT = '<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"></circle><path d="M11 6.5V11l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var ICON_BAD = '<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M6 6l10 10M16 6L6 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path></svg>';
+
   function showTicket(row){
-    document.getElementById('status-pill').textContent = humanizeStatus(row.status);
+    var st = row.status || 'menunggu-checkin';
+    var punyaTiket = (st === 'menunggu-checkin' || st === 'selesai');
+    var bad = (st === 'ditolak' || st === 'batal' || st === 'tidak-hadir');
+
+    var badge = document.getElementById('ticket-badge');
+    badge.className = 'confirm-badge' + (bad ? ' bad' : (st === 'menunggu-verifikasi' ? ' wait' : ''));
+    badge.innerHTML = bad ? ICON_BAD : (st === 'menunggu-verifikasi' ? ICON_WAIT : ICON_OK);
+
+    var titles = {
+      'menunggu-verifikasi': 'Pengajuan Sedang Diperiksa',
+      'menunggu-checkin': 'Tiket Kunjungan Anda',
+      'selesai': 'Kunjungan Tercatat',
+      'ditolak': 'Pengajuan Tidak Disetujui',
+      'batal': 'Pengajuan Dibatalkan',
+      'tidak-hadir': 'Kunjungan Tidak Terlaksana'
+    };
+    var leads = {
+      'menunggu-verifikasi': 'Petugas protokol sedang memeriksa pengajuan Anda. Tiket QR akan muncul di halaman ini setelah disetujui.',
+      'menunggu-checkin': 'Tunjukkan kode QR ini kepada petugas keamanan saat tiba di lobi.',
+      'selesai': 'Anda sudah check-in pada kunjungan ini.',
+      'ditolak': 'Mohon maaf, pengajuan kunjungan ini tidak dapat disetujui.',
+      'batal': 'Pengajuan kunjungan ini telah dibatalkan.',
+      'tidak-hadir': 'Kunjungan ini ditandai tidak terlaksana pada jadwalnya.'
+    };
+    document.getElementById('ticket-title').textContent = titles[st] || 'Tiket Kunjungan Anda';
+    document.getElementById('ticket-lead').textContent = leads[st] || '';
+
+    document.getElementById('status-pill').textContent = humanizeStatus(st);
     document.getElementById('kode-display').textContent = row.kode_kunjungan;
+
+    // Catatan dari petugas: alasan penolakan, atau perubahan jadwal.
+    var note = document.getElementById('status-note');
+    var notes = [];
+    if(st === 'ditolak' && row.alasan_tolak){
+      notes.push('<b>Alasan:</b> ' + esc(row.alasan_tolak));
+    }
+    if(row.jadwal_diubah_dari && punyaTiket){
+      notes.push('<b>Jadwal diubah petugas</b> dari ' + esc(row.jadwal_diubah_dari) + '. Harap datang sesuai jadwal baru di bawah.');
+    }
+    if(row.catatan_petugas && st !== 'ditolak'){
+      notes.push('<b>Catatan petugas:</b> ' + esc(row.catatan_petugas));
+    }
+    if(st === 'ditolak' && row.catatan_petugas){
+      notes.push('<b>Catatan petugas:</b> ' + esc(row.catatan_petugas));
+    }
+    note.innerHTML = notes.join('<br>');
+    note.className = 'status-note' + (notes.length ? ' show' : '') + (bad ? ' bad' : '');
+
     var summary = document.getElementById('summary-list');
     summary.innerHTML =
       fieldRow('Nama', row.nama) +
       fieldRow('Instansi', row.instansi) +
       fieldRow('Ditemui', row.ditemui) +
+      fieldRow('Topik', row.topik) +
       fieldRow('Jadwal', row.tanggal_kunjungan + ' · ' + (row.jam_kunjungan || '').slice(0,5)) +
       fieldRow('Rombongan', (row.jumlah_rombongan || 1) + ' orang');
 
+    // QR hanya untuk pengajuan yang sudah disetujui.
     var qrHolder = document.getElementById('qr-holder');
     qrHolder.innerHTML = '';
-    if(typeof QRCode !== 'undefined'){
+    if(punyaTiket && typeof QRCode !== 'undefined'){
       new QRCode(qrHolder, { text: row.kode_kunjungan, width: 148, height: 148, colorDark: '#241712', colorLight: '#ffffff' });
     }
+    qrHolder.style.display = punyaTiket ? 'flex' : 'none';
+
+    document.getElementById('print-btn').style.display = punyaTiket ? '' : 'none';
+    document.getElementById('download-btn').style.display = punyaTiket ? '' : 'none';
+    document.getElementById('refresh-btn').style.display = (st === 'menunggu-verifikasi') ? '' : 'none';
+    document.getElementById('reapply-btn').style.display = (st === 'ditolak' || st === 'batal') ? '' : 'none';
+    document.getElementById('confirm-note').textContent = punyaTiket
+      ? 'Kode kunjungan ini tersimpan di sistem SIGAP dan akan diverifikasi oleh petugas keamanan pada saat check-in.'
+      : 'Simpan kode kunjungan Anda. Halaman ini menampilkan status terbaru setiap kali dibuka.';
 
     lookupBlock.style.display = 'none';
     confirmView.classList.add('active');
@@ -308,6 +393,10 @@
     statusEl.classList.remove('error');
     kodeInput.value = '';
     window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  document.getElementById('refresh-btn').addEventListener('click', function(){
+    runLookup(document.getElementById('kode-display').textContent);
   });
 
   document.getElementById('print-btn').addEventListener('click', function(){
